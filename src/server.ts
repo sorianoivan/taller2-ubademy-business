@@ -16,7 +16,7 @@ export default function createServer() {
   });
 
   app.get("/user", (req: Request, res: Response, next: NextFunction) => {
-    res.send("johndoe");
+    res.send("john");
   });
 
   return app;
