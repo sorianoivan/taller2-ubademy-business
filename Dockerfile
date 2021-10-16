@@ -16,4 +16,6 @@ COPY src /app/src
 
 COPY test /app/test
 
+COPY newrelic.js /app/
+
 CMD npm start
