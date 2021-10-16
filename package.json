@@ -32,6 +32,7 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "newrelic": "^8.5.0"
   }
 }
