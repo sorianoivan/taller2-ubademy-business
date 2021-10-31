@@ -1,4 +1,6 @@
 import express, { Application, Request, Response, NextFunction } from "express";
+const bodyParser = require('body-parser');
+
 
 export default function createServer() {
   const app: Application = express();
@@ -18,6 +20,13 @@ export default function createServer() {
   app.get("/user", (req: Request, res: Response, next: NextFunction) => {
     res.send("john");
   });
+
+  app.use(bodyParser.json());
+
+  app.post("/create", (req: Request, res: Response) => {
+    console.log(req.body)
+    res.send({'create': 'ok'}) //TODO: Return something else
+  })
 
   return app;
 }

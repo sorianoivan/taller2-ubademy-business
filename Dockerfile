@@ -8,9 +8,9 @@ COPY tsconfig.json /app/
 
 RUN npm i
 
-EXPOSE 3000
+EXPOSE 8002
 
-ENV PORT=3000
+ENV PORT=8002
 
 COPY src /app/src
 
