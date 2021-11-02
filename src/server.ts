@@ -19,5 +19,10 @@ export default function createServer() {
     res.send("john");
   });
 
+  app.post("/create_profile", (req: Request, res: Response, next: NextFunction) => {
+    //res.send("john");
+
+  });
+
   return app;
 }
