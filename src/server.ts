@@ -1,5 +1,5 @@
 import express, { Application, Request, Response, NextFunction } from "express";
-import { Course } from "./models/course"
+import { Course } from "./models/course";
 const bodyParser = require('body-parser');
 
 
@@ -25,9 +25,15 @@ export default function createServer() {
   app.use(bodyParser.json());
 
   app.post("/create", (req: Request, res: Response) => {
-    let course: Course = req.body; //TODO: Find out how to do this correctly because its not failing if it receives an argument of the wrong type
-    console.log(course);
-    res.send({'create': 'okkk'}) //TODO: Return something else
+    try {
+      let course: Course = new Course(req.body.title, req.body.description, req.body.hashtags,
+                                      req.body.type, req.body.sub_type);
+      //TODO: Add course to db
+    } catch (e) {
+      console.log("Error creating course: ", e);
+      res.status(405).json({'status': 'error', 'message': 'Missing or invalid fields'});
+    }
+    res.status(200).json({'status': 'ok', 'message':'course succesfully created'}) //TODO: Should i return the course?
   })
 
   return app;
