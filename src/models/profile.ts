@@ -2,9 +2,9 @@ export class UserProfile {
     name: string;
     email: string;
     country: string;
-    sub_type: SubscriptionType;
+    sub_type: number;
 
-    constructor(name: string, email: string, country: string, sub_type: SubscriptionType) {
+    constructor(name: string, email: string, country: string, sub_type: number) {
         this.name = name;
         this.email = email;
         this.country = country;
