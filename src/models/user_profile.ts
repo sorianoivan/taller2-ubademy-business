@@ -2,13 +2,13 @@ export class UserProfile {
     name: string;
     email: string;
     country: string;
-    sub_type: number;
+    subscription_type: number;
 
-    constructor(name: string, email: string, country: string, sub_type: number) {
+    constructor(name: string, email: string, country: string, subscription_type: number) {
         this.name = name;
         this.email = email;
         this.country = country;
-        this.sub_type = sub_type;
+        this.subscription_type = subscription_type;
         this.check_profile_types()
     }
 
@@ -25,13 +25,9 @@ export class UserProfile {
         if (typeof this.country != "string") {
             throw Error("hashtags should be strings");
         }
-        if (typeof this.sub_type != "number") {
+        if (typeof this.subscription_type != "number") {
             throw Error("sub type should be a number");//TODO: See if i can verify if it is CourseType instead of just number
         }
     }
 } 
-
-
-
-
 
