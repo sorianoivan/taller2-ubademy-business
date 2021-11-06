@@ -5,17 +5,17 @@ export class Course {
     hashtags: string[];
     location: string;
     type: string;
-    sub_type: string;
+    subscription_type: string;
 
     constructor(email: string, title: string, description: string,
-                 hashtags: string[], location: string, type: string, sub_type: string) {
+                 hashtags: string[], location: string, type: string, subscription_type: string) {
         this.creator_email = email;
         this.title = title;
         this.description = description;
         this.hashtags = hashtags;
         this.location = location;
         this.type = type;
-        this.sub_type = sub_type;
+        this.subscription_type = subscription_type;
         //TODO: Add exams and media
         this.check_course_types()
     }
@@ -42,7 +42,7 @@ export class Course {
         if (typeof this.type != "string") {
             throw Error("type should be a string");
         }
-        if (typeof this.sub_type != "string") {
+        if (typeof this.subscription_type != "string") {
             throw Error("sub type should be a string");
         }
     }

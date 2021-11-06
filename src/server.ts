@@ -1,6 +1,27 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import { Course } from "./models/course";
 const bodyParser = require('body-parser');
+//const { MongoClient } = require('mongodb');
+var mongo = require("mongodb")
+
+const url = "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
+const client = new mongo.MongoClient(url);
+async function run() {
+    try {
+        await client.connect();
+        console.log("Connected correctly to server");
+    } catch (err) {
+        console.log(err);
+    }
+    finally {
+        await client.close();
+    }
+}
+run().catch(console.dir);
+
+const business_db = client.db(<string>"Business");
+//const profiles_table = business_db.collection(<string>process.env.PROFILES_TABLE);
+const courses_table = business_db.collection(<string>"Courses");
 
 
 export default function createServer() {
@@ -20,12 +41,24 @@ export default function createServer() {
 
   app.use(bodyParser.json());
 
-  app.post("/create", (req: Request, res: Response) => {
+  app.post("/create", async (req: Request, res: Response) => {
     try {
       let course: Course = new Course(req.body.email, req.body.title, req.body.description, req.body.hashtags,
-                                      req.body.location, req.body.type, req.body.sub_type);
+                                      req.body.location, req.body.type, req.body.subscription_type);
       //TODO: Add course to db
       console.log(course)
+      courses_table.insertOne(course, function (error: any, response: { ops: any[]; }) {
+        if(error) {
+            console.log('Error occurred while inserting');
+           // return 
+        } else {
+           console.log('inserted record', response.ops[0]);
+          // return 
+        }
+    });
+      console.log("chau")
+      //const p = await courses_table.insertOne(course);
+      //console.log(p)
     } catch (e) {
       console.log("Error creating course: ", e);
       res.status(405).json({'status': 'error', 'message': 'Missing or invalid fields'});
