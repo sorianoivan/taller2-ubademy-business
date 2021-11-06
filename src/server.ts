@@ -2,7 +2,8 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import { UserProfile } from "./models/user_profile";
 const body_parser = require('body-parser');
 
-const { MongoClient } = require('mongodb');
+const mongo=require("mongodb")
+const { MongoClient } = require("mongodb");
 const uri = <string>process.env.MONGODB_URL;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect().then;
@@ -39,9 +40,30 @@ export default function createServer() {
   app.use(body_parser.json());
   app.post("/create_profile", (req: Request, res: Response, next: NextFunction) => {
     //res.send("john");
-    console.log(req.body);
-    // const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
-    // const p = profiles_table.insertOne(user_profile);
+    //console.log(req.body);
+
+    // try {
+    //   const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
+    //   const p = profiles_table.insertOne(user_profile).then;
+    //   res.send("Profile created successfully");
+    // } catch (e) {
+    //   if (e instanceof mongo.MongoServerError) {
+    //     res.send("User profile already exists");
+    //   } else {
+    //     res.send("Unknown error");
+    //   }
+    // }
+
+
+    try {
+      const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
+      const p = profiles_table.insertOne(user_profile).then;
+      res.send("Profile created successfully");
+    } catch (e) {
+      //TODO: DIFERENCIAR EL ERROR DE UNIQUE DE MONGODB DE OTRO INESPERADO
+      res.send("User profile already exists");
+    }
+
   });
 
   return app;
