@@ -1,6 +1,6 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import { Course } from "./models/course";
-const bodyParser = require('body-parser');
+const body_parser = require('body-parser');
 //const { MongoClient } = require('mongodb');
 var mongo = require("mongodb")
 
@@ -14,7 +14,7 @@ async function run() {
         console.log(err);
     }
     finally {
-        await client.close();
+        //await client.close();
     }
 }
 run().catch(console.dir);
@@ -39,7 +39,7 @@ export default function createServer() {
     res.send("ok");
   });
 
-  app.use(bodyParser.json());
+  app.use(body_parser.json());
 
   app.post("/create", async (req: Request, res: Response) => {
     try {
@@ -47,32 +47,26 @@ export default function createServer() {
                                       req.body.location, req.body.type, req.body.subscription_type);
       //TODO: Add course to db
       console.log(course)
-      courses_table.insertOne(course, function (error: any, response: { ops: any[]; }) {
-        if(error) {
-            console.log('Error occurred while inserting');
-           // return 
-        } else {
-           console.log('inserted record', response.ops[0]);
-          // return 
-        }
-    });
+    //   courses_table.insertOne(course, function (error: any, response: { ops: any[]; }) {
+    //     if(error) {
+    //         console.log('Error occurred while inserting', error);
+    //        // return 
+    //     } else {
+    //        console.log('inserted record', response.ops[0]);
+    //       // return 
+    //     }
+    // });
+    courses_table.insertOne(course).then((result: { insertedId: any; }) => console.log(`Successfully inserted item with _id: ${result.insertedId}`)).catch((err: any) => console.error(`Failed to insert item: ${err}`))
+      //await client.close();
       console.log("chau")
       //const p = await courses_table.insertOne(course);
       //console.log(p)
     } catch (e) {
       console.log("Error creating course: ", e);
       res.status(405).json({'status': 'error', 'message': 'Missing or invalid fields'});
+      return;
     }
     res.status(200).json({'status': 'ok', 'message':'course succesfully created'}) //TODO: Should i return the course?
   })
-
-  /*  Curl command to test course creation. Change token once it timeouts
-  curl --request POST \
-  --url http://localhost:8516/courses/create \
-  --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1bl9tYWlsX3JhbmRvbUBnbWFpbC5jb20iLCJleHAiOjE2MzU5OTMyNjB9.Ri80aTDX9ZoCpBTW67z8sWTFZMbxvMlCnvXkTH0Dc-A' \
-  --header 'Content-Type: application/json' \
-  --data '{"title":"chau","description":"alto curso", "hashtags":["h1","h2"],"sub_type":"gratis","type":"programacion"}' 
-  */
-
   return app;
 }
