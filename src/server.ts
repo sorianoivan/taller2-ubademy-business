@@ -1,30 +1,29 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import { Course } from "./models/course";
 const body_parser = require('body-parser');
-//const { MongoClient } = require('mongodb');
-var mongo = require("mongodb")
+import * as mongoDB from "mongodb";
 
-const url = "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
-const client = new mongo.MongoClient(url);
-async function run() {
-    try {
-        await client.connect();
-        console.log("Connected correctly to server");
-    } catch (err) {
-        console.log(err);
-    }
-    finally {
-        //await client.close();
-    }
-}
-run().catch(console.dir);
+// const url = "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
+// const client = new mongo.MongoClient(url);
+// async function run() {
+//     try {
+//         await client.connect();
+//         console.log("Connected correctly to server");
+//     } catch (err) {
+//         console.log(err);
+//     }
+//     finally {
+//         //await client.close();
+//     }
+// }
+// run().catch(console.dir);
 
-const business_db = client.db(<string>"Business");
-//const profiles_table = business_db.collection(<string>process.env.PROFILES_TABLE);
-const courses_table = business_db.collection(<string>"Courses");
+// const business_db = client.db(<string>"Business");
+// //const profiles_table = business_db.collection(<string>process.env.PROFILES_TABLE);
+// const courses_table = business_db.collection(<string>"Courses");
 
 
-export default function createServer() {
+export default function createServer(business_db: mongoDB.Db) {
   const app: Application = express();
 
   app.get("/", (req: Request, res: Response) => {
@@ -45,18 +44,10 @@ export default function createServer() {
     try {
       let course: Course = new Course(req.body.email, req.body.title, req.body.description, req.body.hashtags,
                                       req.body.location, req.body.type, req.body.subscription_type);
-      //TODO: Add course to db
       console.log(course)
-    //   courses_table.insertOne(course, function (error: any, response: { ops: any[]; }) {
-    //     if(error) {
-    //         console.log('Error occurred while inserting', error);
-    //        // return 
-    //     } else {
-    //        console.log('inserted record', response.ops[0]);
-    //       // return 
-    //     }
-    // });
-    courses_table.insertOne(course).then((result: { insertedId: any; }) => console.log(`Successfully inserted item with _id: ${result.insertedId}`)).catch((err: any) => console.error(`Failed to insert item: ${err}`))
+      business_db.collection("Courses").insertOne(course)
+      .then((result: { insertedId: any; }) => console.log(`Successfully inserted item with _id: ${result.insertedId}`))
+      .catch((err: any) => console.error(`Failed to insert item: ${err}`))
       //await client.close();
       console.log("chau")
       //const p = await courses_table.insertOne(course);
@@ -68,5 +59,17 @@ export default function createServer() {
     }
     res.status(200).json({'status': 'ok', 'message':'course succesfully created'}) //TODO: Should i return the course?
   })
+
+  app.get("/course", async (_req: Request, res: Response) => {
+    try{
+      const my_course = await business_db.collection("Courses").findOne({title: "epico"});
+      // Print to the console
+      console.log(my_course);
+      res.status(200).end();
+    } catch (err) {
+      console.log(err);
+      res.status(406).end();
+    }
+  });
   return app;
 }
