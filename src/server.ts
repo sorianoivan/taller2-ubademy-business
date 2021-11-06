@@ -1,5 +1,6 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import { UserProfile } from "./models/user_profile";
+const body_parser = require('body-parser');
 
 const { MongoClient } = require('mongodb');
 const uri = <string>process.env.MONGODB_URL;
@@ -35,11 +36,12 @@ export default function createServer() {
     res.send("john");
   });
 
+  app.use(body_parser.json());
   app.post("/create_profile", (req: Request, res: Response, next: NextFunction) => {
     //res.send("john");
-    
-    const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
-    const p = profiles_table.insertOne(user_profile);
+    console.log(req.body);
+    // const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
+    // const p = profiles_table.insertOne(user_profile);
   });
 
   return app;
