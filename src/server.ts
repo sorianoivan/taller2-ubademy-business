@@ -38,10 +38,7 @@ export default function createServer() {
   });
 
   app.use(body_parser.json());
-  app.post("/create_profile", (req: Request, res: Response, next: NextFunction) => {
-    //res.send("john");
-    //console.log(req.body);
-
+  app.post("/create_profile", async (req: Request, res: Response, next: NextFunction) => {
     // try {
     //   const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
     //   const p = profiles_table.insertOne(user_profile).then;
@@ -54,10 +51,9 @@ export default function createServer() {
     //   }
     // }
 
-
     try {
       const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
-      const p = profiles_table.insertOne(user_profile).then;
+      await profiles_table.insertOne(user_profile);
       res.send("Profile created successfully");
     } catch (e) {
       //TODO: DIFERENCIAR EL ERROR DE UNIQUE DE MONGODB DE OTRO INESPERADO
