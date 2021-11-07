@@ -4,12 +4,12 @@ const body_parser = require('body-parser');
 
 const mongo=require("mongodb")
 const { MongoClient } = require("mongodb");
-const url = <string>process.env.MONGODB_URL;
+const url = process.env.MONGODB_URL;
 const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect().then;
 
 const business_db = client.db(process.env.BUSINESS_DATABASE);
-const profiles_table = business_db.collection(<string>process.env.PROFILES_TABLE);
+const profiles_table = business_db.collection(process.env.PROFILES_TABLE);
 
 
 export default function createServer() {
