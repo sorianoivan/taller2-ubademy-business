@@ -1,12 +1,24 @@
 import express, { Application, Request, Response } from "express";
+import { Db, MongoAPIError } from "mongodb";
 import { Course } from "./models/course";
-import * as body_parser from "body-parser";
-import * as mongoDB from "mongodb";
+//import * as mongoDB from "mongodb";
+import { UserProfile } from "./models/user_profile";
+const body_parser = require('body-parser');
+const mongo = require("mongodb")
+const { MongoClient } = require("mongodb");
 
-const MONGODB_URL = "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
+const url = process.env.MONGODB_URL;
+//const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
+//client.connect().then;
+//const business_db = client.db(process.env.BUSINESS_DATABASE);
+//const profiles_table = business_db.collection(process.env.PROFILES_TABLE);
+
+
+//const MONGODB_URL = "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
 
 export function connect_to_database() {
-  const mongo_client = new mongoDB.MongoClient(MONGODB_URL);
+  console.log(url);
+  const mongo_client = new MongoClient(url);
   try {
     mongo_client.connect();
     console.log("Connected correctly to server");
@@ -17,7 +29,7 @@ export function connect_to_database() {
   return mongo_client
 }
 
-export function create_server(business_db: mongoDB.Db) {
+export function create_server(business_db: Db) {//Db is the type for a mongo database
   const app: Application = express();
 
   app.get("/", (req: Request, res: Response) => {
@@ -33,7 +45,6 @@ export function create_server(business_db: mongoDB.Db) {
   });
 
   app.use(body_parser.json());
-
   app.post("/create_course", async (req: Request, res: Response) => {
     try {
       let course: Course = new Course(req.body.email, req.body.title, req.body.description, req.body.hashtags,
@@ -43,7 +54,7 @@ export function create_server(business_db: mongoDB.Db) {
       console.log("Course succesfully inserted");      
     } catch (e) {
       console.log("Error creating course: ", e);
-      if (e instanceof mongoDB.MongoServerError) {
+      if (e instanceof mongo.MongoServerError) {
         res.status(202).json({'status': 'error', 'message': 'Could not insert course to db'});
         return;
       } else if (e instanceof Error){//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
@@ -64,5 +75,36 @@ export function create_server(business_db: mongoDB.Db) {
     //   res.status(406).end();
     // }
   });
+
+  app.use(body_parser.json());
+  app.post("/create_profile", async (req: Request, res: Response) => {
+
+    // We might have to use this if we decide to tell the difference between a repeated key and other type of error
+
+    // try {
+    //   const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
+    //   const p = profiles_table.insertOne(user_profile).then;
+    //   res.send("Profile created successfully");
+    // } catch (e) {
+    //   if (e instanceof mongo.MongoServerError) {
+    //     res.send("User profile already exists");
+    //   } else {
+    //     res.send("Unknown error");
+    //   }
+    // }
+
+    const profiles_table = business_db.collection(<string>process.env.PROFILES_TABLE);
+
+    try {
+      const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
+      await profiles_table.insertOne(user_profile);
+      res.send("Profile created successfully");
+    } catch (e) {
+      //TODO: DIFERENCIAR EL ERROR DE UNIQUE DE MONGODB DE OTRO INESPERADO
+      res.send("User profile already exists");
+    }
+
+  });
+
   return app;
 }
