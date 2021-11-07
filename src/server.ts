@@ -8,12 +8,6 @@ const uri = <string>process.env.MONGODB_URL;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect().then;
 
-// client.connect(err => {
-//   const collection = client.db("test").collection("devices");
-//   // perform actions on the collection object
-//   client.close();
-// });
-
 const business_db = client.db(<string>process.env.BUSINESS_DATABASE);
 const profiles_table = business_db.collection(<string>process.env.PROFILES_TABLE);
 
@@ -39,6 +33,9 @@ export default function createServer() {
 
   app.use(body_parser.json());
   app.post("/create_profile", async (req: Request, res: Response, next: NextFunction) => {
+
+    // We might have to use this if we decide to tell the difference between a repeated key and other type of error
+
     // try {
     //   const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
     //   const p = profiles_table.insertOne(user_profile).then;
