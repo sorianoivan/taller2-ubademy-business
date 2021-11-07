@@ -1,5 +1,4 @@
 var assert = require('assert');
-import { UserProfile } from "../src/models/user_profile";
 
 describe('Pinger', () =>
 {
