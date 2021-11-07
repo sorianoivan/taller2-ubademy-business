@@ -1,5 +1,5 @@
 import express, { Application, Request, Response, NextFunction } from "express";
-import { UserProfile } from "./models/user_profile";
+import { UserProfile} from "./models/user_profile";
 const body_parser = require('body-parser');
 
 const mongo=require("mongodb")
@@ -33,30 +33,22 @@ export default function createServer() {
 
   app.use(body_parser.json());
   app.post("/create_profile", async (req: Request, res: Response, next: NextFunction) => {
-
-    // We might have to use this if we decide to tell the difference between a repeated key and other type of error
-
-    // try {
-    //   const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
-    //   const p = profiles_table.insertOne(user_profile).then;
-    //   res.send("Profile created successfully");
-    // } catch (e) {
-    //   if (e instanceof mongo.MongoServerError) {
-    //     res.send("User profile already exists");
-    //   } else {
-    //     res.send("Unknown error");
-    //   }
-    // }
-
     try {
       const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
       await profiles_table.insertOne(user_profile);
       res.send("Profile created successfully");
     } catch (e) {
-      //TODO: DIFERENCIAR EL ERROR DE UNIQUE DE MONGODB DE OTRO INESPERADO
-      res.send("User profile already exists");
+      let error = <Error>e;
+      console.log(error.name);
+      if (error.name === "InvalidConstructionParameters") {
+        res.send("Received invalid parameters in request body");
+      } else if (error.name === "MongoServerError") {
+        res.send("User profile already exists");
+      } else {
+        // TODO: TIRAR CODIGO DE ERROR DE HTTP PORQUE ES UN ERROR INESPERADO
+        res.send("Unexpected error");
+      }
     }
-
   });
 
   return app;
