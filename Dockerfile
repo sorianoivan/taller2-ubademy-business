@@ -8,9 +8,9 @@ COPY tsconfig.json /app/
 
 RUN npm i
 
-EXPOSE 3000
+EXPOSE 8002
 
-ENV PORT=3000
+ENV PORT=8002
 ENV MONGODB_URL="mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority"
 ENV BUSINESS_DATABASE="Business"
 ENV PROFILES_TABLE="Profiles"
