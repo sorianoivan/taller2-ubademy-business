@@ -3,7 +3,21 @@ import { Course } from "./models/course";
 import * as body_parser from "body-parser";
 import * as mongoDB from "mongodb";
 
-export default function create_server(business_db: mongoDB.Db) {
+const MONGODB_URL = "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
+
+export function connect_to_database() {
+  const mongo_client = new mongoDB.MongoClient(MONGODB_URL);
+  try {
+    mongo_client.connect();
+    console.log("Connected correctly to server");
+  } catch (err) {
+    console.log(err);
+    process.exit(1);
+  }
+  return mongo_client
+}
+
+export function create_server(business_db: mongoDB.Db) {
   const app: Application = express();
 
   app.get("/", (req: Request, res: Response) => {
@@ -29,10 +43,10 @@ export default function create_server(business_db: mongoDB.Db) {
       console.log("Course succesfully inserted");      
     } catch (e) {
       console.log("Error creating course: ", e);
-      if (e instanceof mongoDB.MongoServerError) {//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
+      if (e instanceof mongoDB.MongoServerError) {
         res.status(202).json({'status': 'error', 'message': 'Could not insert course to db'});
         return;
-      } else if (e instanceof Error){
+      } else if (e instanceof Error){//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
         res.status(201).json({'status': 'error', 'message': 'Missing or invalid fields'});
         return; 
       }
