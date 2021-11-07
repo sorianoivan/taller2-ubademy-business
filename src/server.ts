@@ -4,11 +4,11 @@ const body_parser = require('body-parser');
 
 const mongo=require("mongodb")
 const { MongoClient } = require("mongodb");
-const uri = <string>process.env.MONGODB_URL;
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+const url = <string>process.env.MONGODB_URL;
+const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect().then;
 
-const business_db = client.db(<string>process.env.BUSINESS_DATABASE);
+const business_db = client.db(process.env.BUSINESS_DATABASE);
 const profiles_table = business_db.collection(<string>process.env.PROFILES_TABLE);
 
 
