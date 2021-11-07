@@ -7,7 +7,8 @@ const body_parser = require('body-parser');
 const mongo = require("mongodb")
 const { MongoClient } = require("mongodb");
 
-const url = process.env.MONGODB_URL;
+//TODO: The link is here because when the tessts are run there is no env to take MONGODB_URL from.
+const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
 //const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 //client.connect().then;
 //const business_db = client.db(process.env.BUSINESS_DATABASE);
@@ -17,7 +18,6 @@ const url = process.env.MONGODB_URL;
 //const MONGODB_URL = "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
 
 export function connect_to_database() {
-  console.log(url);
   const mongo_client = new MongoClient(url);
   try {
     mongo_client.connect();
