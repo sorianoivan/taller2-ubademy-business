@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "express": "^4.17.1",
+    "firebase": "^9.3.0",
     "mongodb": "^4.1.4",
     "newrelic": "^8.5.0"
   }

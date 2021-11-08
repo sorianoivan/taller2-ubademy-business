@@ -1,4 +1,5 @@
 import express, { Application, Request, Response } from "express";
+import { FirebaseStorage, ref } from "firebase/storage";
 import { Db, MongoAPIError } from "mongodb";
 import { Course } from "./models/course";
 //import * as mongoDB from "mongodb";
@@ -6,6 +7,8 @@ import { UserProfile } from "./models/user_profile";
 const body_parser = require('body-parser');
 const mongo = require("mongodb")
 const { MongoClient } = require("mongodb");
+
+import fs from "fs";
 
 //TODO: The link is here because when the tessts are run there is no env to take MONGODB_URL from.
 const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
@@ -29,7 +32,7 @@ export function connect_to_database() {
   return mongo_client
 }
 
-export function create_server(business_db: Db) {//Db is the type for a mongo database
+export function create_server(business_db: Db, storage: FirebaseStorage) {//Db is the type for a mongo database
   const app: Application = express();
 
   app.get("/", (req: Request, res: Response) => {
