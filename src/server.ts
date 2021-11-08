@@ -34,7 +34,27 @@ export default function createServer() {
   app.use(body_parser.json());
   app.post("/create_profile", async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
+      const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type, []);
+      await profiles_table.insertOne(user_profile);
+      res.send("Profile created successfully");
+    } catch (e) {
+      let error = <Error>e;
+      console.log(error.name);
+      if (error.name === "InvalidConstructionParameters") {
+        res.send("Received invalid parameters in request body");
+      } else if (error.name === "MongoServerError") {
+        res.send("User profile already exists");
+      } else {
+        // TODO: TIRAR CODIGO DE ERROR DE HTTP PORQUE ES UN ERROR INESPERADO
+        res.send("Unexpected error");
+      }
+    }
+  });
+
+  app.use(body_parser.json());
+  app.post("/update_profile", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user_profile = new UserProfile(req.body.name, req.body.email, req.body.country, req.body.subscription_type, req.body.interesting_genres);
       await profiles_table.insertOne(user_profile);
       res.send("Profile created successfully");
     } catch (e) {

@@ -9,12 +9,12 @@ export class UserProfile {
     subscription_type: string;
     interesting_genres: string[];
 
-    constructor(name: string, email: string, country: string, subscription_type: string) {
+    constructor(name: string, email: string, country: string, subscription_type: string, interesting_genres: string[]) {
         this.name = name;
         this.email = email;
         this.country = country;
         this.subscription_type = subscription_type;
-        this.interesting_genres = [];
+        this.interesting_genres = interesting_genres;
         this.check_profile_types()
     }
 
@@ -34,6 +34,12 @@ export class UserProfile {
         if (typeof this.subscription_type != "string") {
             throw new InvalidConstructionParameters("sub type should be a number");//TODO: See if i can verify if it is CourseType instead of just number
         }
+
+        if (Array.isArray(this.interesting_genres)) {
+            for
+            throw new InvalidConstructionParameters("sub type should be a number");//TODO: See if i can verify if it is CourseType instead of just number
+        }
+
     }
 } 
 
