@@ -8,9 +8,12 @@ export let profile_schema = schema({
     email: String,
     country: String,
     subscription_type: String,
-    //interesting_genres: Array(String),
-    interesting_genres: [Array.of(String)],
-  });
+    // interesting_genres: Array(String),
+    // interesting_genres: [Array.of(String)],
+    // interesting_genres: (<any[]>[...config.get_available_countries()]).push(Array.like([])),
+    interesting_genres: [...config.get_available_countries(), Array.like([])],
+    // interesting_genres: [Array.like([])],
+});
 
 export let new_profile_schema = schema({
     name: String,

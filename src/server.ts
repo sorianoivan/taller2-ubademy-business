@@ -40,7 +40,7 @@ export default function createServer() {
 
     try {
       // const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type, []);
-      const user_profile = new UserProfile(req.body.name, req.body.email, "", "Free", ["buenas"]);
+      const user_profile = new UserProfile(req.body.name, req.body.email, "", "Free", []);
       await profiles_table.insertOne(user_profile);
       res.send("Profile created successfully");
     } catch (e) {
