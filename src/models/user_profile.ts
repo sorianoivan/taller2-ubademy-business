@@ -1,26 +1,14 @@
 import { InvalidConstructionParameters } from "./invalid_construction_parameters";
-// import { Schema } from "js-schema";
 const schema = require('js-schema');
 import { config } from "../configuration/config"
 
 export let profile_schema = schema({
     name: String,
     email: String,
-    country: String,
+    country: [...config.get_available_countries(), ""],
     subscription_type: String,
-    // interesting_genres: Array(String),
-    // interesting_genres: [Array.of(String)],
-    // interesting_genres: (<any[]>[...config.get_available_countries()]).push(Array.like([])),
-    interesting_genres: [...config.get_available_countries(), Array.like([])],
-    // interesting_genres: [Array.like([])],
+    // We should have a check for the genres array, but the module does not allow the correct kind of checking for that
 });
-
-export let new_profile_schema = schema({
-    name: String,
-    email: String,
-    //subscription_type: String,
-  });
-
 
 export class UserProfile {
     name: string;
@@ -35,32 +23,21 @@ export class UserProfile {
         this.country = country;
         this.subscription_type = subscription_type;
         this.interesting_genres = interesting_genres;
-        console.log(profile_schema(this));
-        this.check_profile_types();
+
+        if ((!profile_schema(this)) || (!((this.interesting_genres != undefined) && (this._are_valid_genres())))) {
+            console.log("Tiro exception");
+            throw new InvalidConstructionParameters("Invalid create profile body format");
+        }
     }
 
-    //To verify that the values received in the request are the correct type expected since ts does not enforce it
-    check_profile_types() {
-        if (typeof this.name != "string") {
-            throw new InvalidConstructionParameters("Name should be a string");
+    _are_valid_genres(): Boolean {
+        const genres_set = config.get_available_genres();
+        for (let i = 0; i < this.interesting_genres.length; i++) {
+            if (!genres_set.has(this.interesting_genres[i])) {
+                return false;
+            }
         }
-        if (typeof this.email != "string") {
-            throw new InvalidConstructionParameters("Email should be a string");
-        }
-
-        // TODO: AGREGAR CHEQUEO DE QUE EL PAIS RECIBIDO ES VALIDO
-        if (typeof this.country != "string") {
-            throw new InvalidConstructionParameters("hashtags should be strings");
-        }
-        if (typeof this.subscription_type != "string") {
-            throw new InvalidConstructionParameters("sub type should be a number");//TODO: See if i can verify if it is CourseType instead of just number
-        }
-        /*
-        if (Array.isArray(this.interesting_genres)) {
-            for
-            throw new InvalidConstructionParameters("sub type should be a number");//TODO: See if i can verify if it is CourseType instead of just number
-        }
-        */
+        return true;
     }
 } 
 

@@ -2,18 +2,21 @@ const fs = require("fs");
 const path = require("path");
 
 class Config {
-    // available_countries: Set<String>;
+    available_genres: Set<String>;
     available_countries: string[];
     
     constructor() {
-        //this.available_countries = [];
-        //this.available_countries = new Set();
-        var text = fs.readFileSync(path.join(__dirname, "../config_files/countries.txt"), "utf-8");
-        // var countries = text.split("\n");
-        // countries.forEach((country: string) => {
-        //     this.available_countries.add(country);
-        // });
-        this.available_countries = text.split("\n");
+        var countries_text = fs.readFileSync(path.join(__dirname, "../config_files/countries.txt"), "utf-8");
+        this.available_countries = countries_text.split("\n");
+        
+        
+        this.available_genres = new Set();
+        var genres_text = fs.readFileSync(path.join(__dirname, "../config_files/genres.txt"), "utf-8");
+        var genres = genres_text.split("\n");
+        genres.forEach((genre: string) => {
+            this.available_genres.add(genre);
+        });
+    
     }
 
     // get_available_countries(): Set<String> {
@@ -22,6 +25,10 @@ class Config {
 
     get_available_countries(): string[] {
         return this.available_countries;
+    }
+
+    get_available_genres(): Set<String> {
+        return this.available_genres;
     }
 }
 
