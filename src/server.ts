@@ -53,10 +53,29 @@ export default function createServer() {
 
   app.use(body_parser.json());
   app.post("/update_profile", async (req: Request, res: Response, next: NextFunction) => {
+    // try {
+    //   const user_profile = new UserProfile(req.body.name, req.body.email, req.body.country, req.body.subscription_type, req.body.interesting_genres);
+    //   await profiles_table.insertOne(user_profile);
+    //   res.send("Profile created successfully");
+    // } catch (e) {
+    //   let error = <Error>e;
+    //   console.log(error.name);
+    //   if (error.name === "InvalidConstructionParameters") {
+    //     res.send("Received invalid parameters in request body");
+    //   } else if (error.name === "MongoServerError") {
+    //     res.send("User profile already exists");
+    //   } else {
+    //     res.status(400).send("Unexpected error");
+    //   }
+    // }
+
     try {
       const user_profile = new UserProfile(req.body.name, req.body.email, req.body.country, req.body.subscription_type, req.body.interesting_genres);
-      await profiles_table.insertOne(user_profile);
-      res.send("Profile created successfully");
+      const query = { "email": req.body.email };
+      const update = { "$set": { user_profile } };
+      const options = { "upsert": false };
+      await profiles_table.updateOne(query, update, options);
+
     } catch (e) {
       let error = <Error>e;
       console.log(error.name);
@@ -68,6 +87,16 @@ export default function createServer() {
         res.status(400).send("Unexpected error");
       }
     }
+
+    // const query = { "name": "lego" };
+    // const update = {
+    //   "$set": {
+    //   "name": "blocks",
+    //   "price": 20.99,
+    //   "category": "toys"
+    //   }
+    // };
+    // const options = { "upsert": false };
   });
 
   return app;
