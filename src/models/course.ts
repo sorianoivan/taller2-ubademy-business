@@ -1,3 +1,6 @@
+const schema = require('js-schema');
+
+
 export class Course {
     creator_email: string;
     title: string;
@@ -8,50 +11,34 @@ export class Course {
     type: string;
     subscription_type: string;
 
-    constructor(email: string, title: string, description: string,
-                 hashtags: string[], media: string[], location: string, type: string, subscription_type: string) {
-        this.creator_email = email;
-        this.title = title;
-        this.description = description;
-        this.hashtags = hashtags;
-        this.media = media;
-        this.location = location;
-        this.type = type;
-        this.subscription_type = subscription_type;
-        //TODO: Add exams and media
-        this.check_course_types()
+
+    constructor(course_data: any) {
+        if (!this.validate_data(course_data)) {
+            throw Error("Invalid fields");
+        } 
+        this.creator_email = course_data.email;
+        this.title = course_data.title;
+        this.description = course_data.description;
+        this.hashtags = course_data.hashtags;
+        this.media = course_data.media;
+        this.location = course_data.location;
+        this.type = course_data.type;
+        this.subscription_type = course_data.subscription_type;
     }
 
-    //To verify that the values received in the request are the correct type expected since ts does not enforce it
-    check_course_types() {
-        if (typeof this.creator_email != "string") {
-            throw Error("Username should be a string");
-        }
-        if (typeof this.title != "string") {
-            throw Error("Title should be a string");
-        }
-        if (typeof this.description != "string") {
-            throw Error("Description should be a string");
-        }
-        if (typeof this.location != "string") {
-            throw Error("Location should be a string");
-        }
-        for (let h of this.hashtags) {
-            if (typeof h != "string") {
-                throw Error("hashtags should be strings");
-            }
-        }
-        for (let url of this.media) {
-            if (typeof url != "string") {
-                throw Error("hashtags should be strings");
-            }
-        }
-        if (typeof this.type != "string") {
-            throw Error("type should be a string");
-        }
-        if (typeof this.subscription_type != "string") {
-            throw Error("sub type should be a string");
-        }
+    validate_data(course_data: any) {
+        const Course = schema({
+            email: String,
+            title: String,
+            description: String,
+            location: String,
+            type: String,
+            subscription_type: String,
+            hashtags: Array.of(String),
+            media: Array.of(String),
+          })
+      
+          return Course(course_data);
     }
 } 
 

@@ -6,8 +6,8 @@ import { UserProfile } from "./models/user_profile";
 const body_parser = require('body-parser');
 const mongo = require("mongodb")
 const { MongoClient } = require("mongodb");
+//const schema = require('js-schema');
 
-import fs from "fs";
 
 //TODO: The link is here because when the tessts are run there is no env to take MONGODB_URL from.
 const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
@@ -49,8 +49,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   app.use(body_parser.json());
   app.post("/create_course", async (req: Request, res: Response) => {
     try {
-      let course: Course = new Course(req.body.email, req.body.title, req.body.description, req.body.hashtags,
-                                      req.body.media, req.body.location, req.body.type, req.body.subscription_type);
+      let course: Course = new Course(req.body);
       console.log(course);//To debug
       await business_db.collection("Courses").insertOne(course);
       console.log("Course succesfully inserted");
@@ -69,14 +68,13 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
 
   app.get("/course/", async (req: Request, res: Response) => {
     try{
-      console.log("hola");
-      const id = new ObjectId(req.body.id);
+      const id = new ObjectId(req.body.id);//TODO: validate input
       const my_course = await business_db.collection("Courses").findOne({_id: id});
-      console.log(my_course);
-      res.status(200).json({'status': 'ok', 'message':'course succesfully created'}) 
+      console.log(my_course);//To debug
+      res.status(200).json(my_course) 
     } catch (err) {
       console.log(err);
-      res.status(201).json({'status': 'error', 'message': 'Missing or invalid fields'});
+      res.status(201).json({'status': 'error', 'message': 'Course not found'});
     }
   });
 
