@@ -1,4 +1,5 @@
 import express, { Application, Request, Response } from "express";
+import schema from "js-schema";
 import { Db, MongoAPIError, ObjectId } from "mongodb";
 import { Course } from "./models/course";
 //import * as mongoDB from "mongodb";
@@ -66,15 +67,19 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     res.status(200).json({'status': 'ok', 'message':'course succesfully created'}) 
   })
 
-  app.get("/course/", async (req: Request, res: Response) => {
+  app.get("/course", async (req: Request, res: Response) => {
     try{
-      const id = new ObjectId(req.body.id);//TODO: validate input
-      const my_course = await business_db.collection("Courses").findOne({_id: id});
+      const Id = schema(String)
+      if (!Id(req.body.id)) {
+        res.status(201).json({'status':'error','message':'id should be a string'});
+        return;
+      }
+      const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
       console.log(my_course);//To debug
       res.status(200).json(my_course) 
     } catch (err) {
       console.log(err);
-      res.status(201).json({'status': 'error', 'message': 'Course not found'});
+      res.status(202).json({'status': 'error', 'message': 'Course not found'});
     }
   });
 
