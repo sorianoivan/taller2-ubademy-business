@@ -46,8 +46,7 @@ export default function createServer() {
       } else if (error.name === "MongoServerError") {
         res.send("User profile already exists");
       } else {
-        // TODO: TIRAR CODIGO DE ERROR DE HTTP PORQUE ES UN ERROR INESPERADO
-        res.send("Unexpected error");
+        res.status(400).send("Unexpected error");
       }
     }
   });
@@ -66,8 +65,7 @@ export default function createServer() {
       } else if (error.name === "MongoServerError") {
         res.send("User profile already exists");
       } else {
-        // TODO: TIRAR CODIGO DE ERROR DE HTTP PORQUE ES UN ERROR INESPERADO
-        res.send("Unexpected error");
+        res.status(400).send("Unexpected error");
       }
     }
   });
