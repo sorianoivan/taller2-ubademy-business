@@ -1,6 +1,23 @@
 import { InvalidConstructionParameters } from "./invalid_construction_parameters";
+// import { Schema } from "js-schema";
+const schema = require('js-schema');
+import { config } from "../configuration/config"
 
- 
+export let profile_schema = schema({
+    name: String,
+    email: String,
+    country: String,
+    subscription_type: String,
+    //interesting_genres: Array(String),
+    interesting_genres: [Array.of(String)],
+  });
+
+export let new_profile_schema = schema({
+    name: String,
+    email: String,
+    //subscription_type: String,
+  });
+
 
 export class UserProfile {
     name: string;
@@ -15,7 +32,8 @@ export class UserProfile {
         this.country = country;
         this.subscription_type = subscription_type;
         this.interesting_genres = interesting_genres;
-        this.check_profile_types()
+        console.log(profile_schema(this));
+        this.check_profile_types();
     }
 
     //To verify that the values received in the request are the correct type expected since ts does not enforce it
@@ -34,12 +52,12 @@ export class UserProfile {
         if (typeof this.subscription_type != "string") {
             throw new InvalidConstructionParameters("sub type should be a number");//TODO: See if i can verify if it is CourseType instead of just number
         }
-
+        /*
         if (Array.isArray(this.interesting_genres)) {
             for
             throw new InvalidConstructionParameters("sub type should be a number");//TODO: See if i can verify if it is CourseType instead of just number
         }
-
+        */
     }
 } 
 

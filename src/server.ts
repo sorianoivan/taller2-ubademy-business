@@ -1,5 +1,6 @@
 import express, { Application, Request, Response, NextFunction } from "express";
-import { UserProfile} from "./models/user_profile";
+import { UserProfile, profile_schema, new_profile_schema } from "./models/user_profile";
+import { config } from "./configuration/config"
 const body_parser = require('body-parser');
 
 const mongo=require("mongodb")
@@ -33,8 +34,13 @@ export default function createServer() {
 
   app.use(body_parser.json());
   app.post("/create_profile", async (req: Request, res: Response, next: NextFunction) => {
+
+    //console.log(new_profile_schema(req.body))
+    //console.log(config.get_available_countries());
+
     try {
-      const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type, []);
+      // const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type, []);
+      const user_profile = new UserProfile(req.body.name, req.body.email, "", "Free", ["buenas"]);
       await profiles_table.insertOne(user_profile);
       res.send("Profile created successfully");
     } catch (e) {
