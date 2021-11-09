@@ -3,16 +3,18 @@ export class Course {
     title: string;
     description: string;
     hashtags: string[];
+    media: string[]; //urls where the photo/video is stored on firebase storage
     location: string;
     type: string;
     subscription_type: string;
 
     constructor(email: string, title: string, description: string,
-                 hashtags: string[], location: string, type: string, subscription_type: string) {
+                 hashtags: string[], media: string[], location: string, type: string, subscription_type: string) {
         this.creator_email = email;
         this.title = title;
         this.description = description;
         this.hashtags = hashtags;
+        this.media = media;
         this.location = location;
         this.type = type;
         this.subscription_type = subscription_type;
@@ -36,6 +38,11 @@ export class Course {
         }
         for (let h of this.hashtags) {
             if (typeof h != "string") {
+                throw Error("hashtags should be strings");
+            }
+        }
+        for (let url of this.media) {
+            if (typeof url != "string") {
                 throw Error("hashtags should be strings");
             }
         }

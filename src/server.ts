@@ -1,6 +1,5 @@
 import express, { Application, Request, Response } from "express";
-import { FirebaseStorage, ref } from "firebase/storage";
-import { Db, MongoAPIError } from "mongodb";
+import { Db, MongoAPIError, ObjectId } from "mongodb";
 import { Course } from "./models/course";
 //import * as mongoDB from "mongodb";
 import { UserProfile } from "./models/user_profile";
@@ -32,7 +31,7 @@ export function connect_to_database() {
   return mongo_client
 }
 
-export function create_server(business_db: Db, storage: FirebaseStorage) {//Db is the type for a mongo database
+export function create_server(business_db: Db) {//Db is the type for a mongo database
   const app: Application = express();
 
   app.get("/", (req: Request, res: Response) => {
@@ -51,10 +50,10 @@ export function create_server(business_db: Db, storage: FirebaseStorage) {//Db i
   app.post("/create_course", async (req: Request, res: Response) => {
     try {
       let course: Course = new Course(req.body.email, req.body.title, req.body.description, req.body.hashtags,
-                                      req.body.location, req.body.type, req.body.subscription_type);
+                                      req.body.media, req.body.location, req.body.type, req.body.subscription_type);
       console.log(course);//To debug
       await business_db.collection("Courses").insertOne(course);
-      console.log("Course succesfully inserted");      
+      console.log("Course succesfully inserted");
     } catch (e) {
       console.log("Error creating course: ", e);
       if (e instanceof mongo.MongoServerError) {
@@ -69,14 +68,16 @@ export function create_server(business_db: Db, storage: FirebaseStorage) {//Db i
   })
 
   app.get("/course/", async (req: Request, res: Response) => {
-    // try{
-    //   const my_course = await business_db.collection("Courses").findOne({title: "epico"});
-    //   console.log(my_course);
-    //   res.status(200).end();
-    // } catch (err) {
-    //   console.log(err);
-    //   res.status(406).end();
-    // }
+    try{
+      console.log("hola");
+      const id = new ObjectId(req.body.id);
+      const my_course = await business_db.collection("Courses").findOne({_id: id});
+      console.log(my_course);
+      res.status(200).json({'status': 'ok', 'message':'course succesfully created'}) 
+    } catch (err) {
+      console.log(err);
+      res.status(201).json({'status': 'error', 'message': 'Missing or invalid fields'});
+    }
   });
 
   app.use(body_parser.json());

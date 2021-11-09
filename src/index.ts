@@ -3,7 +3,7 @@ import { create_server, connect_to_database } from "./server";
 import * as mongo from "mongodb";
 
 
-// FIREBASE STUFF
+/* // FIREBASE STUFF NO LO BORRO POR LAS DUDAS
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
@@ -27,12 +27,12 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 //const analytics = getAnalytics(app);
-const storage = getStorage(app);
+const storage = getStorage(app); */
 /* ----------------------------------------------------------------------------------*/
 
 
-const start_server = (business_db: mongo.Db, storage: FirebaseStorage) => {
-  const app = create_server(business_db, storage);
+const start_server = (business_db: mongo.Db) => {
+  const app = create_server(business_db);
   const port: number = parseInt(<string>process.env.PORT, 10) || 4000;
   return app.listen(port, () => {
     console.log(`server running on port ${port}`);
@@ -41,7 +41,7 @@ const start_server = (business_db: mongo.Db, storage: FirebaseStorage) => {
 
 let mongo_client = connect_to_database();
 
-let server = start_server(mongo_client.db(<string>"Business"), storage);
+let server = start_server(mongo_client.db(<string>"Business"));
 
 //This is to close everything correctly with ctrl + c
 process.on('SIGINT', () => {
