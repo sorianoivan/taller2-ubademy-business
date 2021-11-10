@@ -4,18 +4,19 @@ import { Db, MongoAPIError, ObjectId } from "mongodb";
 import { Course } from "./models/course";
 //import * as mongoDB from "mongodb";
 import { UserProfile } from "./models/user_profile";
+import { config } from "./configuration/config"
 const body_parser = require('body-parser');
 const mongo = require("mongodb")
-//const { MongoClient } = require("mongodb");
-
 
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
 const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
 
+//const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
+
 export function connect_to_database() {
   const mongo_client = new mongo.MongoClient(url);
   try {
-    mongo_client.connect();
+    mongo_client.connect();//Agrego .then()?
     console.log("Connected correctly to server");
   } catch (err) {
     console.log(err);
@@ -78,34 +79,62 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     }
   });
 
+  const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
+
   app.use(body_parser.json());
   app.post("/create_profile", async (req: Request, res: Response) => {
-
-    // We might have to use this if we decide to tell the difference between a repeated key and other type of error
-
-    // try {
-    //   const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
-    //   const p = profiles_table.insertOne(user_profile).then;
-    //   res.send("Profile created successfully");
-    // } catch (e) {
-    //   if (e instanceof mongo.MongoServerError) {
-    //     res.send("User profile already exists");
-    //   } else {
-    //     res.send("Unknown error");
-    //   }
-    // }
-
-    const profiles_table = business_db.collection(<string>process.env.PROFILES_TABLE);
-
     try {
-      const user_profile = new UserProfile(req.body.name, req.body.email, "", req.body.subscription_type);
+      const user_profile = new UserProfile(req.body.name, req.body.email, "", "Free", []);
       await profiles_table.insertOne(user_profile);
       res.send("Profile created successfully");
     } catch (e) {
-      //TODO: DIFERENCIAR EL ERROR DE UNIQUE DE MONGODB DE OTRO INESPERADO
-      res.send("User profile already exists");
+      let error = <Error>e;
+      console.log(error.name);
+      if (error.name === "InvalidConstructionParameters") {
+        res.send("Received invalid parameters in request body");
+      } else if (error.name === "MongoServerError") {
+        res.send("User profile already exists");
+      } else {
+        res.status(400).send("Unexpected error");
+      }
     }
+  });
 
+  app.use(body_parser.json());
+  app.post("/update_profile", async (req: Request, res: Response) => {
+    try {
+      const user_profile = new UserProfile(req.body.name, req.body.email, req.body.country, req.body.subscription_type, req.body.interesting_genres);
+      const query = { "email": req.body.email };
+      const update = { "$set": user_profile };
+      const options = { "upsert": false };
+
+      let { matchedCount, modifiedCount } = await profiles_table.updateOne(query, update, options);
+      if (matchedCount === 0) {
+        res.send("Unknown user");  
+      } else {
+        res.send("Updated sucessfully");
+      }
+    } catch (e) {
+      let error = <Error>e;
+      console.log(error.name);
+      if (error.name === "InvalidConstructionParameters") {
+        res.send("Received invalid parameters in request body");
+      } else {
+        res.status(400).send("Unexpected error");
+      }
+    }
+  });
+
+  app.get("/countries", (req: Request, res: Response) => {
+    res.send({"locations": config.get_available_countries()});
+  });
+
+  app.get("/course_genres", (req: Request, res: Response) => {
+    res.send({"courses": config.get_available_genres()});
+  });
+
+  app.get("/subscription_types", (req: Request, res: Response) => {
+    res.send({"types": config.get_subscription_types()});
   });
 
   return app;
