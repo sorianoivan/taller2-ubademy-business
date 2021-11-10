@@ -27,7 +27,7 @@ export class Course {
     }
 
     validate_data(course_data: any) {
-        const Course = schema({
+        const course_schema = schema({
             email: String,
             title: String,
             description: String,
@@ -38,7 +38,7 @@ export class Course {
             media: Array.of(String),
           })
       
-          return Course(course_data);
+          return course_schema(course_data);
     }
 } 
 

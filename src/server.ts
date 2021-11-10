@@ -6,22 +6,14 @@ import { Course } from "./models/course";
 import { UserProfile } from "./models/user_profile";
 const body_parser = require('body-parser');
 const mongo = require("mongodb")
-const { MongoClient } = require("mongodb");
-//const schema = require('js-schema');
+//const { MongoClient } = require("mongodb");
 
 
-//TODO: The link is here because when the tessts are run there is no env to take MONGODB_URL from.
+//TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
 const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
-//const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
-//client.connect().then;
-//const business_db = client.db(process.env.BUSINESS_DATABASE);
-//const profiles_table = business_db.collection(process.env.PROFILES_TABLE);
-
-
-//const MONGODB_URL = "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
 
 export function connect_to_database() {
-  const mongo_client = new MongoClient(url);
+  const mongo_client = new mongo.MongoClient(url);
   try {
     mongo_client.connect();
     console.log("Connected correctly to server");
@@ -62,6 +54,8 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       } else if (e instanceof Error){//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
         res.status(200).json({'status': 'error', 'message': 'failed_create_course'});
         return; 
+      } else {
+        res.status(400).json({'status':'error', 'message':'unexpected error'});
       }
     }
     res.status(200).json({'status': 'ok', 'message':'course succesfully created'}) 
