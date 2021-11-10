@@ -5,7 +5,7 @@ const body_parser = require('body-parser');
 
 const mongo=require("mongodb")
 const { MongoClient } = require("mongodb");
-const url = process.env.MONGODB_URL || "url de la db de mongo";
+const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
 const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect().then;
 
