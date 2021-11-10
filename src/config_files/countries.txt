@@ -8,13 +8,11 @@ Argentina
 Armenia
 Australia
 Austria
-Austrian Empire*
 Azerbaijan
 Bahamas, The
 Bahrain
 Bangladesh
 Barbados
-Bavaria*
 Belarus
 Belgium
 Belize
@@ -64,16 +62,13 @@ Eritrea
 Estonia
 Eswatini
 Ethiopia
-Federal Government of Germany (1848-49)*
 Fiji
 Finland
 France
 Gabon
-Gambia, The
 Georgia
 Germany
 Ghana
-Grand Duchy of Tuscany, The*
 Greece
 Grenada
 Guatemala
@@ -81,10 +76,6 @@ Guinea
 Guinea-Bissau
 Guyana
 Haiti
-Hanover*
-Hanseatic Republics*
-Hawaii*
-Hesse*
 Holy See
 Honduras
 Hungary
@@ -101,7 +92,6 @@ Japan
 Jordan
 Kazakhstan
 Kenya
-Kingdom of Serbia/Yugoslavia*
 Kiribati
 Korea
 Kosovo
@@ -111,7 +101,6 @@ Laos
 Latvia
 Lebanon
 Lesotho
-Lew Chew (Loochoo)*
 Liberia
 Libya
 Liechtenstein
