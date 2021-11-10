@@ -1,12 +1,16 @@
 import { InvalidConstructionParameters } from "./invalid_construction_parameters";
 const schema = require('js-schema');
-import { config } from "../configuration/config"
+import { config } from "../configuration/config";
 
 export let profile_schema = schema({
     name: String,
     email: String,
+
+    //TODO: VER SI CONVIENE SACARLO DE ACA Y CHEQUEAR CON UN SET DESDE AFUERA, ASI SE ESTAN ITERANDO TODOS LOS PAISES, Y LA
+    // BIBLIOTECA NO SE BANCA GUARDAR UN SET, TIRA SIEMPRE TRUE
     country: [...config.get_available_countries(), ""],
-    subscription_type: String,
+    
+    subscription_type: config.get_subscription_names(),
     // We should have a check for the genres array, but the module does not allow the correct kind of checking for that
 });
 

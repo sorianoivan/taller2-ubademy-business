@@ -1,0 +1,10 @@
+{
+
+"subscriptions": {
+    "Free": {"price": 0},
+    "Silver": {"price": 10},
+    "Gold": {"price": 20},
+    "Platinum": {"price": 30}
+}
+
+}

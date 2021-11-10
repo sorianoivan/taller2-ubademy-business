@@ -4,6 +4,7 @@ const path = require("path");
 class Config {
     available_genres: Set<String>;
     available_countries: string[];
+    general_data: any;
     
     constructor() {
         var countries_text = fs.readFileSync(path.join(__dirname, "../config_files/countries.txt"), "utf-8");
@@ -16,12 +17,10 @@ class Config {
         genres.forEach((genre: string) => {
             this.available_genres.add(genre);
         });
-    
+        
+        let json_text = fs.readFileSync(path.join(__dirname, "../config_files/general_data.json"), "utf-8");
+        this.general_data = JSON.parse(json_text);
     }
-
-    // get_available_countries(): Set<String> {
-    //     return this.available_countries;
-    // }
 
     get_available_countries(): string[] {
         return this.available_countries;
@@ -29,6 +28,10 @@ class Config {
 
     get_available_genres(): Set<String> {
         return this.available_genres;
+    }
+
+    get_subscription_names(): string[] {
+        return Object.keys(this.general_data["subscriptions"]);
     }
 }
 
