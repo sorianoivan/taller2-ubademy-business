@@ -49,6 +49,7 @@ class Config {
         if (ret === undefined) {
             throw new InvalidStatusMessage("Status message does not exist");
         }
+        return ret;
     }
 }
 

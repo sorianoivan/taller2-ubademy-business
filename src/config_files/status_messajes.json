@@ -1,4 +1,8 @@
 {
-"successful_login": {"status": "ok", "message": "correct username and password"},
-"failed_login": {"status": "error", "message": "incorrect username or password"}
+"non_existent_user": {"status": "error", "message": "non existent user"},
+"existent_user": {"status": "error", "message": "user already exists"},
+"user_updated": {"status": "ok", "message": "user updated"},
+"unexpected_error": {"status": "error", "message": "unexpected error"},
+"profile_created": {"status": "error", "message": "profile created successfully"},
+"invalid body": {"status": "error", "message": "invalid body parameters"}
 }

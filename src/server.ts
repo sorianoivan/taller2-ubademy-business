@@ -37,16 +37,16 @@ export default function createServer() {
     try {
       const user_profile = new UserProfile(req.body.name, req.body.email, "", "Free", []);
       await profiles_table.insertOne(user_profile);
-      res.send("Profile created successfully");
+      res.send(config.get_status_message("profile_created"));
     } catch (e) {
       let error = <Error>e;
       console.log(error.name);
       if (error.name === "InvalidConstructionParameters") {
-        res.send("Received invalid parameters in request body");
+        res.send(config.get_status_message("invalid_body"));
       } else if (error.name === "MongoServerError") {
-        res.send("User profile already exists");
+        res.send(411).send(config.get_status_message("existent_user"));
       } else {
-        res.status(400).send("Unexpected error");
+        res.status(409).send(config.get_status_message("unexpected_error"));
       }
     }
   });
@@ -61,17 +61,17 @@ export default function createServer() {
 
       let { matchedCount, modifiedCount } = await profiles_table.updateOne(query, update, options);
       if (matchedCount === 0) {
-        res.send("Unknown user");  
+        res.status(410).send(config.get_status_message("non_existent_user"));
       } else {
-        res.send("Updated sucessfully");
+        res.send(config.get_status_message("user_updated"));
       }
     } catch (e) {
       let error = <Error>e;
       console.log(error.name);
       if (error.name === "InvalidConstructionParameters") {
-        res.send("Received invalid parameters in request body");
+        res.send(config.get_status_message("invalid_body"));
       } else {
-        res.status(400).send("Unexpected error");
+        res.status(409).send(config.get_status_message("unexpected_error"));
       }
     }
   });
