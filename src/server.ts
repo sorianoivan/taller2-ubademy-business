@@ -72,31 +72,27 @@ export default function createServer() {
     try {
       const user_profile = new UserProfile(req.body.name, req.body.email, req.body.country, req.body.subscription_type, req.body.interesting_genres);
       const query = { "email": req.body.email };
-      const update = { "$set": { user_profile } };
+      const update = { "$set": user_profile };
       const options = { "upsert": false };
-      await profiles_table.updateOne(query, update, options);
+
+      let { matchedCount, modifiedCount } = await profiles_table.updateOne(query, update, options);
+      if (matchedCount === 0) {
+        res.send("Unknown user");  
+      } else if (modifiedCount == 0) {
+        res.status(400).send("Error updating user profile data");
+      } else {
+        res.send("Updated sucessfully");
+      }
 
     } catch (e) {
       let error = <Error>e;
       console.log(error.name);
       if (error.name === "InvalidConstructionParameters") {
         res.send("Received invalid parameters in request body");
-      } else if (error.name === "MongoServerError") {
-        res.send("User profile already exists");
       } else {
         res.status(400).send("Unexpected error");
       }
     }
-
-    // const query = { "name": "lego" };
-    // const update = {
-    //   "$set": {
-    //   "name": "blocks",
-    //   "price": 20.99,
-    //   "category": "toys"
-    //   }
-    // };
-    // const options = { "upsert": false };
   });
 
   return app;

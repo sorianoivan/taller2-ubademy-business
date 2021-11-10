@@ -25,7 +25,6 @@ export class UserProfile {
         this.interesting_genres = interesting_genres;
 
         if ((!profile_schema(this)) || (!((this.interesting_genres != undefined) && (this._are_valid_genres())))) {
-            console.log("Tiro exception");
             throw new InvalidConstructionParameters("Invalid create profile body format");
         }
     }
