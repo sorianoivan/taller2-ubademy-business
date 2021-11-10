@@ -44,7 +44,7 @@ export default function createServer() {
       if (error.name === "InvalidConstructionParameters") {
         res.send(config.get_status_message("invalid_body"));
       } else if (error.name === "MongoServerError") {
-        res.send(411).send(config.get_status_message("existent_user"));
+        res.status(411).send(config.get_status_message("existent_user"));
       } else {
         res.status(409).send(config.get_status_message("unexpected_error"));
       }
