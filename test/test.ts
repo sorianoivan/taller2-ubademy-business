@@ -33,8 +33,11 @@ describe("server checks", function () {
   });
 
   it("valid course input", function() {
-    let course = new Course("mail@mail.com","titulo","descripcion",["h1","h2"],
-                            "argentina", "tipo", "subscripcion");
+    const request = {"email":"test_maik@gmail.com","title":"test","description":"test course", 
+                    "hashtags":["test"],
+                    "media":["testurl.com"],
+                    "location":"test country","subscription_type":"platinum","type":"test"};
+    let course = new Course(request);
   });
 });
 

@@ -57,10 +57,10 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     } catch (e) {
       console.log("Error creating course: ", e);
       if (e instanceof mongo.MongoServerError) {
-        res.status(202).json({'status': 'error', 'message': 'Could not insert course to db'});
+        res.status(200).json({'status': 'error', 'message': 'failed_insert_course'});
         return;
       } else if (e instanceof Error){//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
-        res.status(201).json({'status': 'error', 'message': 'Missing or invalid fields'});
+        res.status(200).json({'status': 'error', 'message': 'failed_create_course'});
         return; 
       }
     }
@@ -71,7 +71,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     try{
       const Id = schema(String)
       if (!Id(req.body.id)) {
-        res.status(201).json({'status':'error','message':'id should be a string'});
+        res.status(200).json({'status':'error','message':'id should be a string'});
         return;
       }
       const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
@@ -79,7 +79,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       res.status(200).json(my_course) 
     } catch (err) {
       console.log(err);
-      res.status(202).json({'status': 'error', 'message': 'Course not found'});
+      res.status(200).json({'status': 'error', 'message': 'Course not found'});
     }
   });
 
