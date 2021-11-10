@@ -5,7 +5,7 @@ const body_parser = require('body-parser');
 
 const mongo=require("mongodb")
 const { MongoClient } = require("mongodb");
-const url = process.env.MONGODB_URL;
+const url = process.env.MONGODB_URL || "url de la db de mongo";
 const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect().then;
 
