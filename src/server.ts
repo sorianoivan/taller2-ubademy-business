@@ -9,8 +9,8 @@ const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALr
 const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect().then;
 
-const business_db = client.db(process.env.BUSINESS_DATABASE);
-const profiles_table = business_db.collection(process.env.PROFILES_TABLE);
+const business_db = client.db(process.env.BUSINESS_DATABASE || "Busines");
+const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 
 
 export default function createServer() {
