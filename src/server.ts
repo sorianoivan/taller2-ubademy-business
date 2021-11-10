@@ -65,15 +65,16 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     try{
       const Id = schema(String)
       if (!Id(req.body.id)) {
-        res.status(200).json({'status':'error','message':'id should be a string'});
+        res.status(200).json({'status':'error','message':'invalid_course_id'});
         return;
       }
       const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
       console.log(my_course);//To debug
-      res.status(200).json(my_course) 
+      let response = Object.assign({}, {'status': 'ok', 'message':'Course found'}, my_course);
+      res.status(200).json(response);
     } catch (err) {
       console.log(err);
-      res.status(200).json({'status': 'error', 'message': 'Course not found'});
+      res.status(200).json({'status': 'error', 'message': 'course_not_found'});
     }
   });
 
