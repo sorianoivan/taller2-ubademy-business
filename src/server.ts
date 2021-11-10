@@ -76,5 +76,17 @@ export default function createServer() {
     }
   });
 
+  app.get("/countries", (req: Request, res: Response, next: NextFunction) => {
+    res.send({"locations": config.get_available_countries()});
+  });
+
+  app.get("/course_genres", (req: Request, res: Response, next: NextFunction) => {
+    res.send({"courses": config.get_available_genres()});
+  });
+
+  app.get("/subscription_types", (req: Request, res: Response, next: NextFunction) => {
+    res.send({"types": config.get_subscription_types()});
+  });
+
   return app;
 }

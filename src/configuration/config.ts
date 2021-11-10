@@ -33,6 +33,10 @@ class Config {
     get_subscription_names(): string[] {
         return Object.keys(this.general_data["subscriptions"]);
     }
+
+    get_subscription_types(): any {
+        return this.general_data["subscriptions"];
+    }
 }
 
 
