@@ -44,9 +44,11 @@ export default function createServer() {
       if (error.name === "InvalidConstructionParameters") {
         res.send(config.get_status_message("invalid_body"));
       } else if (error.name === "MongoServerError") {
-        res.status(411).send(config.get_status_message("existent_user"));
+        let message = config.get_status_message("existent_user");
+        res.status(message["code"]).send(message);
       } else {
-        res.status(409).send(config.get_status_message("unexpected_error"));
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
       }
     }
   });
@@ -61,7 +63,8 @@ export default function createServer() {
 
       let { matchedCount, modifiedCount } = await profiles_table.updateOne(query, update, options);
       if (matchedCount === 0) {
-        res.status(410).send(config.get_status_message("non_existent_user"));
+        let message = config.get_status_message("non_existent_user");
+        res.status(message["code"]).send(message);
       } else {
         res.send(config.get_status_message("user_updated"));
       }
@@ -71,7 +74,8 @@ export default function createServer() {
       if (error.name === "InvalidConstructionParameters") {
         res.send(config.get_status_message("invalid_body"));
       } else {
-        res.status(409).send(config.get_status_message("unexpected_error"));
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
       }
     }
   });

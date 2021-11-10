@@ -1,8 +1,8 @@
 {
-"non_existent_user": {"status": "error", "message": "non existent user"},
-"existent_user": {"status": "error", "message": "user already exists"},
+"non_existent_user": {"status": "error", "message": "non existent user", "code": 409},
+"existent_user": {"status": "error", "message": "user already exists", "code": 410},
 "user_updated": {"status": "ok", "message": "user updated"},
-"unexpected_error": {"status": "error", "message": "unexpected error"},
+"unexpected_error": {"status": "error", "message": "unexpected error", "code": 411},
 "profile_created": {"status": "error", "message": "profile created successfully"},
 "invalid body": {"status": "error", "message": "invalid body parameters"}
 }
