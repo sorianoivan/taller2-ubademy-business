@@ -65,7 +65,6 @@ export default function createServer() {
       } else {
         res.send("Updated sucessfully");
       }
-
     } catch (e) {
       let error = <Error>e;
       console.log(error.name);

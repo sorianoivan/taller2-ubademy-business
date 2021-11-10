@@ -35,6 +35,11 @@ export class UserProfile {
 
     _are_valid_genres(): Boolean {
         const genres_set = config.get_available_genres();
+
+        // Checks if there are duplicated strings
+        if ((new Set(this.interesting_genres)).size !== this.interesting_genres.length) {
+            return false;
+        }
         for (let i = 0; i < this.interesting_genres.length; i++) {
             if (!genres_set.has(this.interesting_genres[i])) {
                 return false;
