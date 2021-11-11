@@ -53,32 +53,40 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       let e = <Error>err;
       console.log("Error creating course: ", e);
       if (e.name === "MongoServerError") {
-        res.send({'status': 'error', 'message': 'failed_insert_course'});
+        res.send(config.get_status_message("duplicate_course"));
         return;
-      } else if (e.name ===  "InvalidConstructionParameters"){//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
-        res.send({'status': 'error', 'message': 'failed_create_course'});
+      } else if (e.name ===  "InvalidConstructionParameters"){
+        res.send(config.get_status_message("invalid_body"));
         return; 
       } else {
-        res.status(400).send({'status':'error', 'message':'unexpected error'});
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
       }
     }
-    res.send({'status': 'ok', 'message':'course succesfully created'}) 
+    res.send(config.get_status_message("course_created"));
   })
 
   app.get("/course", async (req: Request, res: Response) => {
     try{
       const Id = schema(String)
       if (!Id(req.body.id)) {
-        res.send({'status':'error','message':'invalid_course_id'});
+        res.send(config.get_status_message("invalid_course_id"));
         return;
       }
       const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
+      if (my_course == null) {
+        res.send(config.get_status_message("inexistent_course"));
+        return;
+      }
       console.log(my_course);//To debug
       let response = Object.assign({}, {'status': 'ok', 'message':'Course found'}, my_course);
       res.send(response);
     } catch (err) {//TODO: Add more error checking
+      let e = <Error>err;
       console.log(err);
-      res.send({'status': 'error', 'message': 'course_not_found'});
+      let message = config.get_status_message("unexpected_error");
+      res.status(message["code"]).send(message);
+      
     }
   });
 
