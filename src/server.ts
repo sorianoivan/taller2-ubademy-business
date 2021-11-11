@@ -5,6 +5,8 @@ import { Course } from "./models/course";
 //import * as mongoDB from "mongodb";
 import { UserProfile } from "./models/user_profile";
 import { config } from "./configuration/config"
+import { InvalidConstructionParameters } from "./models/invalid_construction_parameters";
+import e from "express";
 const body_parser = require('body-parser');
 const mongo = require("mongodb")
 
@@ -47,35 +49,36 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       console.log(course);//To debug
       await business_db.collection("Courses").insertOne(course);
       console.log("Course succesfully inserted");
-    } catch (e) {
+    } catch (err) {
+      let e = <Error>err;
       console.log("Error creating course: ", e);
-      if (e instanceof mongo.MongoServerError) {
-        res.status(200).json({'status': 'error', 'message': 'failed_insert_course'});
+      if (e.name === "MongoServerError") {
+        res.send({'status': 'error', 'message': 'failed_insert_course'});
         return;
-      } else if (e instanceof Error){//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
-        res.status(200).json({'status': 'error', 'message': 'failed_create_course'});
+      } else if (e.name ===  "InvalidConstructionParameters"){//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
+        res.send({'status': 'error', 'message': 'failed_create_course'});
         return; 
       } else {
-        res.status(400).json({'status':'error', 'message':'unexpected error'});
+        res.status(400).send({'status':'error', 'message':'unexpected error'});
       }
     }
-    res.status(200).json({'status': 'ok', 'message':'course succesfully created'}) 
+    res.send({'status': 'ok', 'message':'course succesfully created'}) 
   })
 
   app.get("/course", async (req: Request, res: Response) => {
     try{
       const Id = schema(String)
       if (!Id(req.body.id)) {
-        res.status(200).json({'status':'error','message':'invalid_course_id'});
+        res.send({'status':'error','message':'invalid_course_id'});
         return;
       }
       const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
       console.log(my_course);//To debug
       let response = Object.assign({}, {'status': 'ok', 'message':'Course found'}, my_course);
-      res.status(200).json(response);
-    } catch (err) {
+      res.send(response);
+    } catch (err) {//TODO: Add more error checking
       console.log(err);
-      res.status(200).json({'status': 'error', 'message': 'course_not_found'});
+      res.send({'status': 'error', 'message': 'course_not_found'});
     }
   });
 
