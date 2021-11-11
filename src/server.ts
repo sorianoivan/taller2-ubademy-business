@@ -85,7 +85,7 @@ export default function createServer() {
   });
 
   app.get("/course_genres", (req: Request, res: Response, next: NextFunction) => {
-    res.send({"courses": config.get_available_genres()});
+    res.send({"courses": Array.from(config.get_available_genres())});
   });
 
   app.get("/subscription_types", (req: Request, res: Response, next: NextFunction) => {
