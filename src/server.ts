@@ -89,16 +89,18 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     try {
       const user_profile = new UserProfile(req.body.name, req.body.email, "", "Free", []);
       await profiles_table.insertOne(user_profile);
-      res.send("Profile created successfully");
+      res.send(config.get_status_message("profile_created"));
     } catch (e) {
       let error = <Error>e;
       console.log(error.name);
       if (error.name === "InvalidConstructionParameters") {
-        res.send("Received invalid parameters in request body");
+        res.send(config.get_status_message("invalid_body"));
       } else if (error.name === "MongoServerError") {
-        res.send("User profile already exists");
+        let message = config.get_status_message("existent_user");
+        res.status(message["code"]).send(message);
       } else {
-        res.status(400).send("Unexpected error");
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
       }
     }
   });
@@ -113,32 +115,42 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
 
       let { matchedCount, modifiedCount } = await profiles_table.updateOne(query, update, options);
       if (matchedCount === 0) {
-        res.send("Unknown user");  
+        let message = config.get_status_message("non_existent_user");
+        res.status(message["code"]).send(message);
       } else {
-        res.send("Updated sucessfully");
+        res.send(config.get_status_message("user_updated"));
       }
     } catch (e) {
       let error = <Error>e;
       console.log(error.name);
       if (error.name === "InvalidConstructionParameters") {
-        res.send("Received invalid parameters in request body");
+        res.send(config.get_status_message("invalid_body"));
       } else {
-        res.status(400).send("Unexpected error");
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
       }
     }
   });
 
   app.get("/countries", (req: Request, res: Response) => {
-    res.send({"locations": config.get_available_countries()});
+    res.send({
+      ...config.get_status_message("data_sent"), 
+      "locations": config.get_available_countries()
+    });
   });
 
   app.get("/course_genres", (req: Request, res: Response) => {
-    res.send({"courses": config.get_available_genres()});
+    res.send({
+      ...config.get_status_message("data_sent"), 
+      "course_genres": Array.from(config.get_available_genres())
+    });
   });
 
   app.get("/subscription_types", (req: Request, res: Response) => {
-    res.send({"types": config.get_subscription_types()});
+    res.send({
+      ...config.get_status_message("data_sent"), 
+      "types": config.get_subscription_types()
+    });
   });
-
   return app;
 }
