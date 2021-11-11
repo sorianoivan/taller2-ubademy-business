@@ -33,13 +33,14 @@ export class Course {
         this.description = course_data.description;
         this.hashtags = course_data.hashtags;
         this.media = course_data.media;
-        this.country = course_data.location;
-        this.course_type = course_data.type;
+        this.country = course_data.country;
+        this.course_type = course_data.course_type;
         this.subscription_type = course_data.subscription_type;
     }
 
     validate_course_data(course_data: any) {
-        return (course_schema(course_data) && config.get_available_genres().has(course_data.course_type));
+        return (course_schema(course_data) && config.get_available_genres().has(course_data.course_type) && 
+                course_data.country.length > 0);
     }
 } 
 
