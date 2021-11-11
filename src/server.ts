@@ -81,15 +81,24 @@ export default function createServer() {
   });
 
   app.get("/countries", (req: Request, res: Response, next: NextFunction) => {
-    res.send({"locations": config.get_available_countries()});
+    res.send({
+      ...config.get_status_message("data_sent"), 
+      "locations": config.get_available_countries()
+    });
   });
 
   app.get("/course_genres", (req: Request, res: Response, next: NextFunction) => {
-    res.send({"courses": Array.from(config.get_available_genres())});
+    res.send({
+      ...config.get_status_message("data_sent"), 
+      "course_genres": Array.from(config.get_available_genres())
+    });
   });
 
   app.get("/subscription_types", (req: Request, res: Response, next: NextFunction) => {
-    res.send({"types": config.get_subscription_types()});
+    res.send({
+      ...config.get_status_message("data_sent"), 
+      "types": config.get_subscription_types()
+    });
   });
 
   return app;

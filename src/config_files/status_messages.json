@@ -4,5 +4,6 @@
 "user_updated": {"status": "ok", "message": "user updated"},
 "unexpected_error": {"status": "error", "message": "unexpected error", "code": 411},
 "profile_created": {"status": "error", "message": "profile created successfully"},
-"invalid body": {"status": "error", "message": "invalid body parameters"}
+"invalid body": {"status": "error", "message": "invalid body parameters"},
+"data_sent": {"status": "ok", "message": "data retreived"}
 }
