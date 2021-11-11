@@ -131,14 +131,6 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     }
   });
 
-  app.get("/profile", (req: Request, res: Response) => {
-
-    res.send({
-      ...config.get_status_message("data_sent"), 
-      "locations": config.get_available_countries()
-    });
-  });
-
   app.get("/countries", (req: Request, res: Response) => {
     res.send({
       ...config.get_status_message("data_sent"), 
