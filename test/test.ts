@@ -33,10 +33,10 @@ describe("server checks", function () {
   });
 
   it("valid course input", function() {
-    const request = {"email":"test_maik@gmail.com","title":"test","description":"test course", 
-                    "hashtags":["test"],
-                    "media":["testurl.com"],
-                    "location":"test country","subscription_type":"platinum","type":"test"};
+    const request = {"email":"billgates@gmail.com","title":"microsoft",
+                    "description":"learn windows", "hashtags":["windows","azure"],
+                    "media":["https://firebasestorage.googleapis.com/v0/b/ubademy-business.appspot.com/o/meme.jpg?alt=media&token=c77bee56-e10c-41b0-ba15-bbdc26a2d974"],
+                    "country":"Argentina","subscription_type":"Platinum","course_type":"Programming"};
     let course = new Course(request);
   });
 });
