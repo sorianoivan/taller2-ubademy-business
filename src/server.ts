@@ -92,7 +92,6 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       res.send(config.get_status_message("profile_created"));
     } catch (e) {
       let error = <Error>e;
-      console.log(error.name);
       if (error.name === "InvalidConstructionParameters") {
         res.send(config.get_status_message("invalid_body"));
       } else if (error.name === "MongoServerError") {
