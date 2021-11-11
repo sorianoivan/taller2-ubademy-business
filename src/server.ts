@@ -87,7 +87,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   app.use(body_parser.json());
   app.post("/create_profile", async (req: Request, res: Response) => {
     try {
-      const user_profile = new UserProfile(req.body.name, req.body.email, req.body.country, "Free", req.body.interesting_genres);
+      const user_profile = new UserProfile(req.body.name, req.body.email, "", "Free", []);
       await profiles_table.insertOne(user_profile);
       res.send(config.get_status_message("profile_created"));
     } catch (e) {
@@ -129,6 +129,14 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
         res.status(message["code"]).send(message);
       }
     }
+  });
+
+  app.get("/profile", (req: Request, res: Response) => {
+
+    res.send({
+      ...config.get_status_message("data_sent"), 
+      "locations": config.get_available_countries()
+    });
   });
 
   app.get("/countries", (req: Request, res: Response) => {
