@@ -6,7 +6,7 @@ let course_schema = schema({
     email: String,
     title: String,
     description: String,
-    country: [...config.get_available_countries(), ""],
+    country: config.get_available_countries(),
     course_type: String,
     subscription_type: config.get_subscription_names(),
     hashtags: Array.of(String),
@@ -25,7 +25,7 @@ export class Course {
 
 
     constructor(course_data: any) {
-        if (!this.validate_course_data(course_data) || !config.get_available_genres().has(course_data.course_type)) {
+        if (!this.validate_course_data(course_data)) {
             throw new InvalidConstructionParameters("Invalid create course body format");
         } 
         this.creator_email = course_data.email;
@@ -39,7 +39,7 @@ export class Course {
     }
 
     validate_course_data(course_data: any) {
-        return course_schema(course_data);
+        return (course_schema(course_data) && config.get_available_genres().has(course_data.course_type));
     }
 } 
 
