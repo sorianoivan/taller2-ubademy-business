@@ -158,7 +158,22 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       //TODO: chequear que el array solo tenga 1 elemento
       // Chequear que permisos llegan en req, para ver que data hay que mostrar
       // Hacer un schema de lo que llega
-      res.send(result);
+      if (err) {
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
+      } else if (result === undefined) {
+        let message = config.get_status_message("duplicated_profile");
+        res.status(message["code"]).send(message);
+      } else if (result.length !== 1) {
+        let message = config.get_status_message("duplicated_profile");
+        res.status(message["code"]).send(message);
+      } else {
+        let document = (<Array<Document>>result)[0];
+        res.send({
+          ...config.get_status_message("data_sent"),
+          "profile": document
+        });
+      }
     });
   });
 
