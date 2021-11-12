@@ -4,6 +4,8 @@
 "user_updated": {"status": "ok", "message": "user updated"},
 "unexpected_error": {"status": "error", "message": "unexpected error", "code": 411},
 "profile_created": {"status": "error", "message": "profile created successfully"},
-"invalid body": {"status": "error", "message": "invalid body parameters"},
-"data_sent": {"status": "ok", "message": "data retreived"}
+"invalid_body": {"status": "error", "message": "invalid body parameters"},
+"data_sent": {"status": "ok", "message": "data retreived"},
+"non_existent_course": {"status": "error", "message": "non existent course"},
+"course_updated": {"status": "ok", "message": "course updated"}
 }

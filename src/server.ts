@@ -49,20 +49,18 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       console.log(course);//To debug
       await business_db.collection("Courses").insertOne(course);
       console.log("Course succesfully inserted");
+      res.send({'status': 'ok', 'message':'course succesfully created'}) 
     } catch (err) {
       let e = <Error>err;
       console.log("Error creating course: ", e);
       if (e.name === "MongoServerError") {
         res.send({'status': 'error', 'message': 'failed_insert_course'});
-        return;
       } else if (e.name ===  "InvalidConstructionParameters"){//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
         res.send({'status': 'error', 'message': 'failed_create_course'});
-        return; 
       } else {
         res.status(400).send({'status':'error', 'message':'unexpected error'});
       }
     }
-    res.send({'status': 'ok', 'message':'course succesfully created'}) 
   })
 
   app.get("/course", async (req: Request, res: Response) => {
@@ -81,6 +79,43 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       res.send({'status': 'error', 'message': 'course_not_found'});
     }
   });
+
+
+  app.put("/update_course", async (req: Request, res: Response) => {
+    try {
+      let new_course: Course = new Course(req.body);
+      console.log(new_course);//To debug
+      console.log("ID: ", req.body.id);
+
+      //Search the course by id and also requires that the mail matches so only the course creator can edit
+      const query = { creator_email: new_course.creator_email, _id: new ObjectId(req.body.id)};
+      const update = { "$set": new_course };
+      const options = { "upsert": false };
+
+      let { matchedCount, modifiedCount } = await business_db.collection("Courses").updateOne(query, update, options);
+      console.log("matched: ", matchedCount);
+      console.log("modified: ", modifiedCount);//This should always be 1
+      if (matchedCount === 0) {
+        res.send(config.get_status_message("non_existent_course"));
+      } else {
+        res.send(config.get_status_message("course_updated"));
+      }
+    }  catch (err) {
+      let e = <Error>err;
+      console.log("Error updating course: ", e);
+      if (e.name ===  "InvalidConstructionParameters"){//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
+        res.send(config.get_status_message("invalid_body"));
+      } else {
+        res.status(400).send({'status':'error', 'message':'unexpected error'});
+      }
+    }
+  });
+
+
+
+
+
+  // PROFILES //
 
   const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 
