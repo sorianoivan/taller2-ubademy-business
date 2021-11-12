@@ -151,5 +151,13 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       "types": config.get_subscription_types()
     });
   });
+
+  app.get("/profile", (req: Request, res: Response) => {
+    let data;
+    profiles_table.find({"email": req.body.email}).toArray(function(err, result) {
+      res.send(result);
+    });
+  });
+
   return app;
 }
