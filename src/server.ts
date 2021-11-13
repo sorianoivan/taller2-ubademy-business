@@ -42,6 +42,8 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     res.send("ok");
   });
 
+  // COURSES
+
   app.use(body_parser.json());
   app.post("/create_course", async (req: Request, res: Response) => {
     try {
@@ -91,7 +93,6 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       let new_course: Course = new Course(req.body);
       console.log(new_course);//To debug
 
-      //TODO:Esto esta repetido de get course. meterlo en una funcion
       const Id = schema(String)
       if (!Id(req.body.id) || (req.body.id.length != 12 && req.body.id.length != 24)) {
         res.send(config.get_status_message("invalid_course_id"));
@@ -120,10 +121,6 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       res.status(message["code"]).send(message);
     }
   });
-
-
-
-
 
   // PROFILES //
 
@@ -196,5 +193,6 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       "types": config.get_subscription_types()
     });
   });
+  
   return app;
 }
