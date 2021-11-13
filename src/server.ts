@@ -168,8 +168,8 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
         let message = config.get_status_message("duplicated_profile");
         res.status(message["code"]).send(message);
       } else {
-        let document = (<Array<Document>>result)[0].ToJSON();
-        let document_to_send: any;
+        let document: any = (<Array<Document>>result)[0];
+        let document_to_send: any = {};
         if (!req.body.has_private_access) {
           config.get_public_profile_data().forEach((profile_field: string) => {
             document_to_send[profile_field] = document[profile_field];
@@ -179,7 +179,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
         }
         res.send({
           ...config.get_status_message("data_sent"),
-          "profile": document
+          "profile": document_to_send
         });
       }
     });
