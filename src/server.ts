@@ -118,8 +118,13 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       res.send(config.get_status_message("course_updated"));
     } catch(err) {
       console.log(err);
-      let message = config.get_status_message("unexpected_error");
-      res.status(message["code"]).send(message);
+      let error = <Error>err;
+      if (error.name === "InvalidConstructionParameters") {
+        res.send(config.get_status_message("invalid_body"));
+      } else {
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
+      }
     }
   });
 
