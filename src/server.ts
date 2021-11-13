@@ -155,8 +155,6 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   app.get("/profile", (req: Request, res: Response) => {
     let data;
     profiles_table.find({"email": req.body.email}).toArray(function(err, result) {
-      //TODO: chequear que el array solo tenga 1 elemento
-      // Chequear que permisos llegan en req, para ver que data hay que mostrar
       // Hacer un schema de lo que llega
       if (err) {
         let message = config.get_status_message("unexpected_error");
