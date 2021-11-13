@@ -80,7 +80,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
         return;
       }
       console.log(my_course);//To debug
-      let response = Object.assign({}, {'status': 'ok', 'message':'Course found'}, my_course);
+      let response = Object.assign({}, config.get_status_message("course_found"), my_course);
       res.send(response);
     } catch (err) {
       console.log(err);
