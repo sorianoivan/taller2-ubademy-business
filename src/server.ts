@@ -66,14 +66,15 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     }
   })
 
-  app.get("/course", async (req: Request, res: Response) => {
+  app.get("/course/:id", async (req: Request, res: Response) => {
     try{
+      let id = req.params.id;
       const Id = schema(String)
-      if (!Id(req.body.id) || (req.body.id.length != 12 && req.body.id.length != 24)) {
+      if (!Id(id) || (id.length != 12 && id.length != 24)) {
         res.send(config.get_status_message("invalid_course_id"));
         return;
       }
-      const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
+      const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(id)});
       if (my_course == null) {
         res.send(config.get_status_message("inexistent_course"));
         return;
