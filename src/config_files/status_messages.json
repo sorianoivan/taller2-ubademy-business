@@ -4,8 +4,12 @@
 "user_updated": {"status": "ok", "message": "user updated"},
 "unexpected_error": {"status": "error", "message": "unexpected error", "code": 411},
 "profile_created": {"status": "error", "message": "profile created successfully"},
-"invalid body": {"status": "error", "message": "invalid body parameters"},
 "data_sent": {"status": "ok", "message": "data retreived"},
 "duplicated_profile": {"status": "error", "message": "profile duplicated", "code": 412},
-"invalid_args": {"status": "error", "message": "invalid get args"}
+"invalid_args": {"status": "error", "message": "invalid get args"},
+"invalid_body": {"status": "error", "message": "invalid body parameters"},
+"duplicate_course": {"status": "error", "message": "failed_insert_course"},
+"course_created": {"status": "ok", "message": "course succesfully created"},
+"inexistent_course": {"status": "error", "message": "course_not_found"},
+"invalid_course_id": {"status": "error", "message": "invalid_course_id"}
 }
