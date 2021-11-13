@@ -98,20 +98,20 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
         res.send(config.get_status_message("invalid_course_id"));
         return;
       }
-      const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
-      if (my_course == null) {
+      const course_to_update = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
+      if (course_to_update == null) {
         res.send(config.get_status_message("inexistent_course"));
         return;
       }
       //Check if the editor is the creator
-      if (new_course.creator_email !== my_course["creator_email"]){
+      if (new_course.creator_email !== course_to_update["creator_email"]){
         res.send(config.get_status_message("invalid_editor"));
         return;
       }
 
       const update = { "$set": new_course };
       const options = { "upsert": false };
-      let { matchedCount, modifiedCount } = await business_db.collection("Courses").updateOne(my_course, update, options);
+      let { matchedCount, modifiedCount } = await business_db.collection("Courses").updateOne(course_to_update, update, options);
       console.log("matched: ", matchedCount);
       console.log("modified: ", modifiedCount);//This should always be 1
       res.send(config.get_status_message("course_updated"));
@@ -193,6 +193,6 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       "types": config.get_subscription_types()
     });
   });
-  
+
   return app;
 }
