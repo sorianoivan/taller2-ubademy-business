@@ -10,5 +10,6 @@
 "course_updated": {"status": "ok", "message": "course updated"},
 "duplicate_course": {"status": "error", "message": "failed_insert_course"},
 "inexistent_course": {"status": "error", "message": "course_not_found"},
-"invalid_course_id": {"status": "error", "message": "invalid_course_id"}
+"invalid_course_id": {"status": "error", "message": "invalid_course_id"},
+"invalid_editor": {"status": "error", "message": "invalid_editor"}
 }

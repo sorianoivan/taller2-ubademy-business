@@ -86,35 +86,38 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     }
   });
 
-
   app.put("/update_course", async (req: Request, res: Response) => {
     try {
       let new_course: Course = new Course(req.body);
       console.log(new_course);//To debug
-      console.log("ID: ", req.body.id);
 
-      //Search the course by id and also requires that the mail matches so only the course creator can edit
-      const query = { creator_email: new_course.creator_email, _id: new ObjectId(req.body.id)};
+      //TODO:Esto esta repetido de get course. meterlo en una funcion
+      const Id = schema(String)
+      if (!Id(req.body.id) || (req.body.id.length != 12 && req.body.id.length != 24)) {
+        res.send(config.get_status_message("invalid_course_id"));
+        return;
+      }
+      const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
+      if (my_course == null) {
+        res.send(config.get_status_message("inexistent_course"));
+        return;
+      }
+      //Check if the editor is the creator
+      if (new_course.creator_email !== my_course["creator_email"]){
+        res.send(config.get_status_message("invalid_editor"));
+        return;
+      }
+
       const update = { "$set": new_course };
       const options = { "upsert": false };
-
-      let { matchedCount, modifiedCount } = await business_db.collection("Courses").updateOne(query, update, options);
+      let { matchedCount, modifiedCount } = await business_db.collection("Courses").updateOne(my_course, update, options);
       console.log("matched: ", matchedCount);
       console.log("modified: ", modifiedCount);//This should always be 1
-      if (matchedCount === 0) {
-        res.send(config.get_status_message("inexistent_course"));
-      } else {
-        res.send(config.get_status_message("course_updated"));
-      }
-    }  catch (err) {
-      let e = <Error>err;
-      console.log("Error updating course: ", e);
-      if (e.name ===  "InvalidConstructionParameters"){//If the course fails the checks in its constructor it throws Error. TODO: Change to a custom error
-        res.send(config.get_status_message("invalid_body"));
-      } else {
-        let message = config.get_status_message("unexpected_error");
-        res.status(message["code"]).send(message);
-      }
+      res.send(config.get_status_message("course_updated"));
+    } catch(err) {
+      console.log(err);
+      let message = config.get_status_message("unexpected_error");
+      res.status(message["code"]).send(message);
     }
   });
 
