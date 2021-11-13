@@ -6,6 +6,9 @@
 "profile_created": {"status": "error", "message": "profile created successfully"},
 "invalid_body": {"status": "error", "message": "invalid body parameters"},
 "data_sent": {"status": "ok", "message": "data retreived"},
-"non_existent_course": {"status": "error", "message": "non existent course"},
-"course_updated": {"status": "ok", "message": "course updated"}
+"course_created": {"status": "ok", "message": "course succesfully created"},
+"course_updated": {"status": "ok", "message": "course updated"},
+"duplicate_course": {"status": "error", "message": "failed_insert_course"},
+"inexistent_course": {"status": "error", "message": "course_not_found"},
+"invalid_course_id": {"status": "error", "message": "invalid_course_id"}
 }
