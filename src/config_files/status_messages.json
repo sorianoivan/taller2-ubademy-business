@@ -6,5 +6,5 @@
 "profile_created": {"status": "error", "message": "profile created successfully"},
 "invalid body": {"status": "error", "message": "invalid body parameters"},
 "data_sent": {"status": "ok", "message": "data retreived"},
-"duplicated_profile": {"status": "error", "message": "profile duplicated", "code": 412},
+"duplicated_profile": {"status": "error", "message": "profile duplicated", "code": 412}
 }
