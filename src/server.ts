@@ -13,7 +13,8 @@ import { get_profile_schema } from "./lone_schemas/get_profile"
 
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
 const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
-
+const MONGO_SHORT_ID_LEN = 12
+const MONGO_LONG_ID_LEN = 24
 //const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 
 export function connect_to_database() {
@@ -43,6 +44,8 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     res.send("ok");
   });
 
+  // COURSES
+
   app.use(body_parser.json());
   app.post("/create_course", async (req: Request, res: Response) => {
     try {
@@ -50,46 +53,84 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       console.log(course);//To debug
       await business_db.collection("Courses").insertOne(course);
       console.log("Course succesfully inserted");
+      res.send(config.get_status_message("course_created"));
     } catch (err) {
       let e = <Error>err;
       console.log("Error creating course: ", e);
       if (e.name === "MongoServerError") {
         res.send(config.get_status_message("duplicate_course"));
-        return;
       } else if (e.name ===  "InvalidConstructionParameters"){
         res.send(config.get_status_message("invalid_body"));
-        return; 
       } else {
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
       }
     }
-    res.send(config.get_status_message("course_created"));
   })
 
-  app.get("/course", async (req: Request, res: Response) => {
+  app.get("/course/:id", async (req: Request, res: Response) => {
     try{
+      let id = req.params.id;
       const Id = schema(String)
-      if (!Id(req.body.id)) {
+      if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
         res.send(config.get_status_message("invalid_course_id"));
         return;
       }
-      const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
+      const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(id)});
       if (my_course == null) {
         res.send(config.get_status_message("inexistent_course"));
         return;
       }
       console.log(my_course);//To debug
-      let response = Object.assign({}, {'status': 'ok', 'message':'Course found'}, my_course);
+      let response = {"status":"ok", "course":my_course};
       res.send(response);
-    } catch (err) {//TODO: Add more error checking
-      let e = <Error>err;
+    } catch (err) {
       console.log(err);
       let message = config.get_status_message("unexpected_error");
       res.status(message["code"]).send(message);
-      
     }
   });
+
+  app.put("/update_course", async (req: Request, res: Response) => {
+    try {
+      let new_course: Course = new Course(req.body);
+      console.log(new_course);//To debug
+
+      const Id = schema(String)
+      if (!Id(req.body.id) || (req.body.id.length != MONGO_SHORT_ID_LEN && req.body.id.length != MONGO_LONG_ID_LEN)) {
+        res.send(config.get_status_message("invalid_course_id"));
+        return;
+      }
+      const course_to_update = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
+      if (course_to_update == null) {
+        res.send(config.get_status_message("inexistent_course"));
+        return;
+      }
+      //Check if the editor is the creator
+      if (new_course.creator_email !== course_to_update["creator_email"]){
+        res.send(config.get_status_message("invalid_editor"));
+        return;
+      }
+
+      const update = { "$set": new_course };
+      const options = { "upsert": false };
+      let { matchedCount, modifiedCount } = await business_db.collection("Courses").updateOne(course_to_update, update, options);
+      console.log("matched: ", matchedCount);
+      console.log("modified: ", modifiedCount);
+      res.send(config.get_status_message("course_updated"));
+    } catch(err) {
+      console.log(err);
+      let error = <Error>err;
+      if (error.name === "InvalidConstructionParameters") {
+        res.send(config.get_status_message("invalid_body"));
+      } else {
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
+      }
+    }
+  });
+
+  // PROFILES //
 
   const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 

@@ -2,14 +2,17 @@
 "non_existent_user": {"status": "error", "message": "non existent user", "code": 409},
 "existent_user": {"status": "error", "message": "user already exists", "code": 410},
 "user_updated": {"status": "ok", "message": "user updated"},
-"unexpected_error": {"status": "error", "message": "unexpected error", "code": 411},
+"unexpected_error": {"status": "error", "message": "error_unexpected", "code": 411},
+"invalid_body": {"status": "error", "message": "invalid_body_parameters"},
 "profile_created": {"status": "ok", "message": "profile created successfully"},
 "data_sent": {"status": "ok", "message": "data retreived"},
 "duplicated_profile": {"status": "error", "message": "profile duplicated", "code": 412},
 "invalid_args": {"status": "error", "message": "invalid get args"},
-"invalid_body": {"status": "error", "message": "invalid body parameters"},
-"duplicate_course": {"status": "error", "message": "failed_insert_course"},
 "course_created": {"status": "ok", "message": "course succesfully created"},
+"course_updated": {"status": "ok", "message": "course succesfully updated"},
+"course_found": {"status": "ok", "message": "course found"},
+"duplicate_course": {"status": "error", "message": "failed_insert_course"},
 "inexistent_course": {"status": "error", "message": "course_not_found"},
-"invalid_course_id": {"status": "error", "message": "invalid_course_id"}
+"invalid_course_id": {"status": "error", "message": "invalid_course_id"},
+"invalid_editor": {"status": "error", "message": "invalid_editor"}
 }
