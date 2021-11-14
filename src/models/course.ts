@@ -2,6 +2,11 @@ const schema = require('js-schema');
 import { InvalidConstructionParameters } from "./invalid_construction_parameters";
 import { config } from "../configuration/config";
 
+interface Video {
+    name: string;
+    url: string;
+}
+
 let course_schema = schema({
     email: String,
     title: String,
@@ -11,8 +16,10 @@ let course_schema = schema({
     course_type: String,
     subscription_type: config.get_subscription_names(),
     hashtags: Array.of(String),
-    media: Array.of(String),
-  })
+    images: Array.of(String),
+    videos: Array //There is no way with js-schema to ask for a field to be an array of Videos
+})
+
 
 export class Course {
     creator_email: string;
@@ -20,7 +27,8 @@ export class Course {
     description: string;
     total_exams: Number;
     hashtags: string[];
-    media: string[]; //urls where the photo/video is stored on firebase storage
+    images: string[];
+    videos: Array<Video>;
     country: string;
     course_type: string;
     subscription_type: string;
@@ -35,13 +43,19 @@ export class Course {
         this.description = course_data.description;
         this.total_exams = course_data.total_exams;
         this.hashtags = course_data.hashtags;
-        this.media = course_data.media;
+        this.images = course_data.images;
+        this.videos = course_data.videos;
         this.country = course_data.country;
         this.course_type = course_data.course_type;
         this.subscription_type = course_data.subscription_type;
     }
 
     validate_course_data(course_data: any) {
+        for (let video of course_data.videos) {
+            if (!(video.hasOwnProperty('name') && video.hasOwnProperty('url'))) {
+                return false;
+            }
+        }
         return (course_schema(course_data) && config.get_available_genres().has(course_data.course_type) && 
                 course_data.country.length > 0);
     }
