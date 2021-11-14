@@ -13,7 +13,8 @@ import { get_profile_schema } from "./lone_schemas/get_profile"
 
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
 const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
-
+const MONGO_SHORT_ID_LEN = 12
+const MONGO_LONG_ID_LEN = 24
 //const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 
 export function connect_to_database() {
@@ -71,7 +72,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     try{
       let id = req.params.id;
       const Id = schema(String)
-      if (!Id(id) || (id.length != 12 && id.length != 24)) {
+      if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
         res.send(config.get_status_message("invalid_course_id"));
         return;
       }
@@ -96,7 +97,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       console.log(new_course);//To debug
 
       const Id = schema(String)
-      if (!Id(req.body.id) || (req.body.id.length != 12 && req.body.id.length != 24)) {
+      if (!Id(req.body.id) || (req.body.id.length != MONGO_SHORT_ID_LEN && req.body.id.length != MONGO_LONG_ID_LEN)) {
         res.send(config.get_status_message("invalid_course_id"));
         return;
       }
@@ -115,7 +116,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       const options = { "upsert": false };
       let { matchedCount, modifiedCount } = await business_db.collection("Courses").updateOne(course_to_update, update, options);
       console.log("matched: ", matchedCount);
-      console.log("modified: ", modifiedCount);//This should always be 1
+      console.log("modified: ", modifiedCount);
       res.send(config.get_status_message("course_updated"));
     } catch(err) {
       console.log(err);

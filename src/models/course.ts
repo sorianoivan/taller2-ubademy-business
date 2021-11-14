@@ -7,6 +7,11 @@ interface Video {
     url: string;
 }
 
+let video_schema = schema({
+    name: String,
+    url: String,
+})
+
 let course_schema = schema({
     email: String,
     title: String,
@@ -52,7 +57,7 @@ export class Course {
 
     validate_course_data(course_data: any) {
         for (let video of course_data.videos) {
-            if (!(video.hasOwnProperty('name') && video.hasOwnProperty('url'))) {
+            if (!video_schema(video)) {
                 return false;
             }
         }
