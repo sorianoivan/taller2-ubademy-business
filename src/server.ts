@@ -123,6 +123,8 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       let error = <Error>err;
       if (error.name === "InvalidConstructionParameters") {
         res.send(config.get_status_message("invalid_body"));
+      } else if (error.name === "MongoServerError") {
+        res.send(config.get_status_message("duplicate_course"));
       } else {
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
