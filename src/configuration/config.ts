@@ -44,6 +44,10 @@ class Config {
         return this.general_data["subscriptions"];
     }
 
+    get_public_profile_data(): string[] {
+        return this.general_data["public_profile_data"];
+    }
+
     get_status_message(context: string): any {
         let ret = this.status_messages[context];
         if (ret === undefined) {

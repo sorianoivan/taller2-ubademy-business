@@ -5,6 +5,7 @@
     "Silver": {"price": 10},
     "Gold": {"price": 20},
     "Platinum": {"price": 30}
-}
+},
+"public_profile_data": ["name", "email", "interesting_genres"]
 
 }

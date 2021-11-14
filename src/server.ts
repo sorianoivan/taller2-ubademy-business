@@ -9,6 +9,7 @@ import { InvalidConstructionParameters } from "./models/invalid_construction_par
 import e from "express";
 const body_parser = require('body-parser');
 const mongo = require("mongodb")
+import { get_profile_schema } from "./lone_schemas/get_profile"
 
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
 const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
@@ -159,5 +160,43 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       "types": config.get_subscription_types()
     });
   });
+
+  app.get("/profile/:user_email/:account_type/:profile_email", (req: Request, res: Response) => {
+    if (!get_profile_schema(req.params)) {
+      res.send(config.get_status_message("invalid_args"));
+    } else {
+      let has_private_access = false;
+      if ((req.params.user_email === req.params.profile_email) || (req.params.account_type === "admin")) {
+        has_private_access = true;
+      }
+      profiles_table.find({"email": req.params.profile_email}).toArray(function(err, result) {
+        if (err) {
+          let message = config.get_status_message("unexpected_error");
+          res.status(message["code"]).send(message);
+        } else if (result === undefined) {
+          let message = config.get_status_message("non_existent_user");
+          res.status(message["code"]).send(message);
+        } else if (result.length !== 1) {
+          let message = config.get_status_message("duplicated_profile");
+          res.status(message["code"]).send(message);
+        } else {
+          let document: any = (<Array<Document>>result)[0];
+          let document_to_send: any = {};
+          if (!has_private_access) {
+            config.get_public_profile_data().forEach((profile_field: string) => {
+              document_to_send[profile_field] = document[profile_field];
+            });
+          } else {
+            document_to_send = document;
+          }
+          res.send({
+            ...config.get_status_message("data_sent"),
+            "profile": document_to_send
+          });
+        }
+      });
+    }
+  });
+
   return app;
 }
