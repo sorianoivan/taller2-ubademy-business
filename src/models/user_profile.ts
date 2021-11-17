@@ -4,8 +4,8 @@ import { config } from "../configuration/config";
 
 export let profile_schema = schema({
     name: String,
-    email: String,
     profile_picture_link: String,
+    email: String,
 
     //TODO: VER SI CONVIENE SACARLO DE ACA Y CHEQUEAR CON UN SET DESDE AFUERA, ASI SE ESTAN ITERANDO TODOS LOS PAISES, Y LA
     // BIBLIOTECA NO SE BANCA GUARDAR UN SET, TIRA SIEMPRE TRUE
@@ -17,8 +17,8 @@ export let profile_schema = schema({
 
 export class UserProfile {
     name: string;
-    email: string;
     profile_picture_link: string;
+    email: string;
     country: string;
     subscription_type: string;
     interesting_genres: string[];

@@ -6,6 +6,6 @@
     "Gold": {"price": 20},
     "Platinum": {"price": 30}
 },
-"public_profile_data": ["name", "email", "interesting_genres"]
+"public_profile_data": ["name", "profile_picture_link", "email", "interesting_genres"]
 
 }
