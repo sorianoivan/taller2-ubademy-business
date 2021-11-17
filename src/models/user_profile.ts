@@ -4,6 +4,7 @@ import { config } from "../configuration/config";
 
 export let profile_schema = schema({
     name: String,
+    profile_picture_link: String,
     email: String,
 
     //TODO: VER SI CONVIENE SACARLO DE ACA Y CHEQUEAR CON UN SET DESDE AFUERA, ASI SE ESTAN ITERANDO TODOS LOS PAISES, Y LA
@@ -16,14 +17,16 @@ export let profile_schema = schema({
 
 export class UserProfile {
     name: string;
+    profile_picture_link: string;
     email: string;
     country: string;
     subscription_type: string;
     interesting_genres: string[];
 
-    constructor(name: string, email: string, country: string, subscription_type: string, interesting_genres: string[]) {
+    constructor(name: string, profile_picture: string, email: string, country: string, subscription_type: string, interesting_genres: string[]) {
         this.name = name;
         this.email = email;
+        this.profile_picture_link = profile_picture;
         this.country = country;
         this.subscription_type = subscription_type;
         this.interesting_genres = interesting_genres;

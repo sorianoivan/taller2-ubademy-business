@@ -139,7 +139,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   app.use(body_parser.json());
   app.post("/create_profile", async (req: Request, res: Response) => {
     try {
-      const user_profile = new UserProfile(req.body.name, req.body.email, "", "Free", []);
+      const user_profile = new UserProfile(req.body.name, "", req.body.email, "", "Free", []);
       await profiles_table.insertOne(user_profile);
       res.send(config.get_status_message("profile_created"));
     } catch (e) {
@@ -159,7 +159,8 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   app.use(body_parser.json());
   app.post("/update_profile", async (req: Request, res: Response) => {
     try {
-      const user_profile = new UserProfile(req.body.name, req.body.email, req.body.country, req.body.subscription_type, req.body.interesting_genres);
+      const user_profile = new UserProfile(req.body.name, req.body.profile_picture, req.body.email, 
+                                           req.body.country, req.body.subscription_type, req.body.interesting_genres);
       const query = { "email": req.body.email };
       const update = { "$set": user_profile };
       const options = { "upsert": false };
