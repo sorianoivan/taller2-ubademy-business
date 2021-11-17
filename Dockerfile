@@ -2,9 +2,15 @@ FROM node:16
 
 WORKDIR /app
 
-COPY package* /app/
 
+COPY package.json /app/
+COPY package-lock.json /app/
+COPY package* /app/
 COPY tsconfig.json /app/
+
+RUN pwd
+RUN ls
+
 
 RUN npm i
 
@@ -17,10 +23,7 @@ ENV BUSINESS_DATABASE="Business"
 ENV PROFILES_TABLE="Profiles"
 
 COPY src /app/src
-
 COPY test /app/test
-
 COPY newrelic.js /app/
 
-CMD mongo
 CMD npm start
