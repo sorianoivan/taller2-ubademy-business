@@ -32,6 +32,8 @@ export function connect_to_database() {
 export function create_server(business_db: Db) {//Db is the type for a mongo database
   const app: Application = express();
 
+
+
   app.get("/", (req: Request, res: Response) => {
     res.send("Hello world!");
   });

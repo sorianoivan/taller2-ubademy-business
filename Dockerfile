@@ -17,8 +17,12 @@ RUN npm i
 EXPOSE 8002
 
 ENV PORT=8002
+
+# Real db
 # ENV MONGODB_URL="mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority"
-ENV MONGODB_URL="mongodb://127.0.0.1:27017"
+
+#Test db
+ENV MONGODB_URL="mongodb+srv://ubademy:business@cluster0.w31lx.mongodb.net/Business?retryWrites=true&w=majority"
 ENV BUSINESS_DATABASE="Business"
 ENV PROFILES_TABLE="Profiles"
 
