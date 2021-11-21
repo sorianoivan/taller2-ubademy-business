@@ -124,12 +124,10 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   //TODO: VER SI METEMOS UN ENDPOINT PARA VER LOS TIPOS DE FILTRADO QUE HAY
   app.get("/organized_courses/:filter_type/:filter", async (req: Request, res: Response) => {
     let filter_type = req.params.filter_type;
-    if ((filter_type === "course_type") || (filter_type === "subscription_type")) {
-      if (filter_type === "course_type") {
-        send_filtered_courses(res, {"course_type": req.params.filter}, {"title": 1, "images": 1, "subscription_type": 1});
-      } else {
-        send_filtered_courses(res, {"subscription_type": req.params.filter}, {"title": 1, "images": 1, "course_type": 1});
-      }
+    if (filter_type === "course_type") {
+      send_filtered_courses(res, {"course_type": req.params.filter}, {"title": 1, "images": 1, "subscription_type": 1});
+    } else if (filter_type === "subscription_type") {
+      send_filtered_courses(res, {"subscription_type": req.params.filter}, {"title": 1, "images": 1, "course_type": 1});
     } else {
       res.send(config.get_status_message("non_existent_filter_type"));
     }
