@@ -15,5 +15,6 @@
 "inexistent_course": {"status": "error", "message": "course_not_found"},
 "invalid_course_id": {"status": "error", "message": "invalid_course_id"},
 "invalid_editor": {"status": "error", "message": "invalid_editor"},
-"non_existent_genre": {"status": "error", "message": "invalid_genre", "code": 413}
+"non_existent_filter": {"status": "error", "message": "invalid filter"},
+"non_existent_filter_type": {"status": "error", "message": "invalid filter type"}
 }
