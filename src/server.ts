@@ -93,7 +93,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
 
   app.get("/genre_courses/:genre", async (req: Request, res: Response) => {
     try{
-      profiles_table.find({"course_type": req.params.genre}, {projection: {"title": 1, "images": 1, "subscription_type": 1}}).toArray(function(err, result) {
+      business_db.collection("Courses").find({"course_type": req.params.genre}, {projection: {"title": 1, "images": 1, "subscription_type": 1}}).toArray(function(err, result) {
         if (err) {
           let message = config.get_status_message("unexpected_error");
           res.status(message["code"]).send(message);
@@ -103,7 +103,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
         } else {
           let courses: any = <Array<Document>>result;
           courses.forEach((course: any) => {
-            course = course.toJSON();
+            course = JSON.parse(JSON.stringify(course));
             course.image = course.images[0];
             course.images = undefined;
           });
