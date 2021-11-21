@@ -71,7 +71,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   app.get("/course/:id", async (req: Request, res: Response) => {
     try{
       let id = req.params.id;
-      const Id = schema(String)
+      const Id = schema(String);
       if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
         res.send(config.get_status_message("invalid_course_id"));
         return;
@@ -84,6 +84,35 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
       console.log(my_course);//To debug
       let response = {"status":"ok", "course":my_course};
       res.send(response);
+    } catch (err) {
+      console.log(err);
+      let message = config.get_status_message("unexpected_error");
+      res.status(message["code"]).send(message);
+    }
+  });
+
+  app.get("/genre_courses/:genre", async (req: Request, res: Response) => {
+    try{
+      profiles_table.find({"course_type": req.params.genre}, {projection: {"title": 1, "images": 1, "subscription_type": 1}}).toArray(function(err, result) {
+        if (err) {
+          let message = config.get_status_message("unexpected_error");
+          res.status(message["code"]).send(message);
+        } else if (result === undefined) {
+          let message = config.get_status_message("non_existent_genre");
+          res.status(message["code"]).send(message);
+        } else {
+          let courses: any = <Array<Document>>result;
+          courses.forEach((course: any) => {
+            course = course.toJSON();
+            course.image = course.images[0];
+            course.images = undefined;
+          });
+          res.send({
+            ...config.get_status_message("data_sent"),
+            "courses": courses
+          });
+        }
+      });
     } catch (err) {
       console.log(err);
       let message = config.get_status_message("unexpected_error");
@@ -107,7 +136,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
         return;
       }
       //Check if the editor is the creator
-      if (new_course.creator_email !== course_to_update["creator_email"]){
+      if (new_course.creator_email !== course_to_update["creator_email"]) {
         res.send(config.get_status_message("invalid_editor"));
         return;
       }
