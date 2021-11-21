@@ -40,7 +40,6 @@ const start_server = (business_db: mongo.Db) => {
 };
 
 let mongo_client = connect_to_database();
-
 let server = start_server(mongo_client.db(<string>"Business"));
 
 //This is to close everything correctly with ctrl + c

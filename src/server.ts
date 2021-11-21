@@ -12,7 +12,8 @@ const mongo = require("mongodb")
 import { get_profile_schema } from "./lone_schemas/get_profile"
 
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
-const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
+// The string is from the test db
+const url = process.env.MONGODB_URL || "mongodb+srv://ubademy:business@cluster0.w31lx.mongodb.net/Business?retryWrites=true&w=majority";
 const MONGO_SHORT_ID_LEN = 12
 const MONGO_LONG_ID_LEN = 24
 //const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
@@ -32,6 +33,14 @@ export function connect_to_database() {
 export function create_server(business_db: Db) {//Db is the type for a mongo database
   const app: Application = express();
 
+  const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
+  const courses_table = business_db.collection("Courses");
+
+  // If the link is form the test db
+  if (url.includes("cluster0")) {
+    profiles_table.deleteMany({}, {});
+    courses_table.deleteMany({}, {});
+  }
 
 
   app.get("/", (req: Request, res: Response) => {
@@ -136,7 +145,6 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
 
   // PROFILES //
 
-  const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 
   app.use(body_parser.json());
   app.post("/create_profile", async (req: Request, res: Response) => {
