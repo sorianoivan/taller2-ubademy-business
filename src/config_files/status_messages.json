@@ -14,5 +14,7 @@
 "duplicate_course": {"status": "error", "message": "failed_insert_course"},
 "inexistent_course": {"status": "error", "message": "course_not_found"},
 "invalid_course_id": {"status": "error", "message": "invalid_course_id"},
-"invalid_editor": {"status": "error", "message": "invalid_editor"}
+"invalid_editor": {"status": "error", "message": "invalid_editor"},
+"non_existent_filter": {"status": "error", "message": "invalid filter"},
+"non_existent_filter_type": {"status": "error", "message": "invalid filter type"}
 }
