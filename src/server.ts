@@ -103,7 +103,6 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
         } else {
           let courses: any = <Array<Document>>result;
           courses.forEach((course: any) => {
-            course = JSON.parse(JSON.stringify(course));
             course.image = course.images[0];
             course.images = undefined;
           });
