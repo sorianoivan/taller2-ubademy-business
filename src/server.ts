@@ -93,22 +93,30 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
 
 
 
-  function send_filtered_courses(err: any, result: any) {
-    if (err) {
+  function send_filtered_courses(res: Response, filter_document: any, projection_document: any) {
+    try{
+      business_db.collection("Courses").find(filter_document, {projection: projection_document}).toArray(function(err, result) {
+        if (err) {
+          let message = config.get_status_message("unexpected_error");
+          res.status(message["code"]).send(message);
+        } else if (result === undefined) {
+          res.send(config.get_status_message("non_existent_filter"));
+        } else {
+          let courses: any = <Array<Document>>result;
+          courses.forEach((course: any) => {
+            course.image = course.images[0];
+            course.images = undefined;
+          });
+          res.send({
+            ...config.get_status_message("data_sent"),
+            "courses": courses
+          });
+        }
+      });
+    } catch (err) {
+      console.log(err);
       let message = config.get_status_message("unexpected_error");
       res.status(message["code"]).send(message);
-    } else if (result === undefined) {
-      res.send(config.get_status_message("non_existent_filter"));
-    } else {
-      let courses: any = <Array<Document>>result;
-      courses.forEach((course: any) => {
-        course.image = course.images[0];
-        course.images = undefined;
-      });
-      res.send({
-        ...config.get_status_message("data_sent"),
-        "courses": courses
-      });
     }
   }
 
@@ -117,14 +125,10 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   app.get("/organized_courses/:filter_type/:filter", async (req: Request, res: Response) => {
     let filter_type = req.params.filter_type;
     if ((filter_type === "course_type") || (filter_type === "subscription_type")) {
-      try{
-        business_db.collection("Courses").find({filter_type : req.params.filter}, {projection: {"title": 1, "images": 1, "subscription_type": 1}}).toArray(function(err, result) {
-          
-        });
-      } catch (err) {
-        console.log(err);
-        let message = config.get_status_message("unexpected_error");
-        res.status(message["code"]).send(message);
+      if (filter_type === "course_type") {
+        send_filtered_courses(res, {"course_type": req.params.filter}, {"title": 1, "images": 1, "subscription_type": 1});
+      } else {
+        send_filtered_courses(res, {"subscription_type": req.params.filter}, {"title": 1, "images": 1, "course_type": 1});
       }
     } else {
       res.send(config.get_status_message("non_existent_filter_type"));
