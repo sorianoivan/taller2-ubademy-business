@@ -21,7 +21,7 @@ const MONGO_LONG_ID_LEN = 24
 //const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 
 export function connect_to_database() {
-  const mongo_client = new mongo.MongoClient(url);
+  const mongo_client = new mongo.MongoClient(url).then();
   try {
     mongo_client.connect().then({});//Agrego .then()?
     console.log("Connected correctly to server");
@@ -38,6 +38,10 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
   const courses_table = business_db.collection("Courses");
 
+  // if (url.includes("cluster0")) {
+  //   profiles_table.deleteMany({});
+  //   courses_table.deleteMany({});
+  // }
 
   app.get("/drop_db", (req: Request, res: Response) => {
     // If the link is form the test db
