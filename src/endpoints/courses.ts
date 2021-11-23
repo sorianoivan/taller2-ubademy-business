@@ -12,10 +12,10 @@ const mongo = require("mongodb")
 import { get_profile_schema } from "../lone_schemas/get_profile"
 import { business_db } from "../index"
 
-let router = express.Router()
+let router = express.Router();
 
-const MONGO_SHORT_ID_LEN = 12
-const MONGO_LONG_ID_LEN = 24
+const MONGO_SHORT_ID_LEN = 12;
+const MONGO_LONG_ID_LEN = 24;
 
 
 router.use(body_parser.json());
