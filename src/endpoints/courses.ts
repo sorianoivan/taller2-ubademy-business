@@ -19,7 +19,7 @@ const MONGO_LONG_ID_LEN = 24;
 
 
 router.use(body_parser.json());
-router.post("/create_course", async (req: Request, res: Response) => {
+router.post("/create", async (req: Request, res: Response) => {
     try {
         let course: Course = new Course(req.body);
         console.log(course);//To debug
@@ -40,7 +40,7 @@ router.post("/create_course", async (req: Request, res: Response) => {
     }
 })
 
-router.get("/course/:id", async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response) => {
     try{
         let id = req.params.id;
         const Id = schema(String);
@@ -94,7 +94,7 @@ function send_filtered_courses(res: Response, filter_document: any, projection_d
 
 
 //TODO: VER SI METEMOS UN ENDPOINT PARA VER LOS TIPOS DE FILTRADO QUE HAY
-router.get("/organized_courses/:filter_type/:filter", async (req: Request, res: Response) => {
+router.get("/organized/:filter_type/:filter", async (req: Request, res: Response) => {
     let filter_type = req.params.filter_type;
     if (filter_type === "course_type") {
         send_filtered_courses(res, {"course_type": req.params.filter}, {"title": 1, "images": 1, "subscription_type": 1});
@@ -105,7 +105,7 @@ router.get("/organized_courses/:filter_type/:filter", async (req: Request, res: 
     }
 });
 
-router.put("/update_course", async (req: Request, res: Response) => {
+router.put("/update", async (req: Request, res: Response) => {
     try {
         let new_course: Course = new Course(req.body);
         console.log(new_course);//To debug
