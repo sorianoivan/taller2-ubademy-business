@@ -108,11 +108,11 @@ if (!get_profile_schema(req.params)) {
         let document: any = (<Array<Document>>result)[0];
         let document_to_send: any = {};
         if (!has_private_access) {
-        config.get_public_profile_data().forEach((profile_field: string) => {
-            document_to_send[profile_field] = document[profile_field];
-        });
+            config.get_public_profile_data().forEach((profile_field: string) => {
+                document_to_send[profile_field] = document[profile_field];
+            });
         } else {
-        document_to_send = document;
+            document_to_send = document;
         }
         res.send({
         ...config.get_status_message("data_sent"),
