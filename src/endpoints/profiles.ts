@@ -18,7 +18,7 @@ let router = express.Router();
 // const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 
 router.use(body_parser.json());
-router.post("/create_profile", async (req: Request, res: Response) => {
+router.post("/create", async (req: Request, res: Response) => {
     try {
         const user_profile = new UserProfile(req.body.name, "", req.body.email, "", "Free", []);
         await profiles_table.insertOne(user_profile);
@@ -38,7 +38,7 @@ router.post("/create_profile", async (req: Request, res: Response) => {
 });
 
 router.use(body_parser.json());
-router.post("/update_profile", async (req: Request, res: Response) => {
+router.post("/update", async (req: Request, res: Response) => {
     try {
         const user_profile = new UserProfile(req.body.name, req.body.profile_picture, req.body.email, 
                                             req.body.country, req.body.subscription_type, req.body.interesting_genres);
@@ -86,7 +86,7 @@ router.get("/subscription_types", (req: Request, res: Response) => {
     });
 });
 
-router.get("/profile/:user_email/:account_type/:profile_email", (req: Request, res: Response) => {
+router.get("/:user_email/:account_type/:profile_email", (req: Request, res: Response) => {
 if (!get_profile_schema(req.params)) {
     res.send(config.get_status_message("invalid_args"));
 } else {
