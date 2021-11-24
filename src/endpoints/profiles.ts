@@ -20,7 +20,7 @@ let router = express.Router();
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
-        const user_profile = new UserProfile(req.body.name, "", req.body.email, "", "Free", []);
+        const user_profile = new UserProfile("", "", req.body.email, "", "Free", []);
         await profiles_table.insertOne(user_profile);
         res.send(config.get_status_message("profile_created"));
     } catch (e) {
