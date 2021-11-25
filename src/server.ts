@@ -16,6 +16,7 @@ import request from "supertest";
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
 // The string is from the test db
 const url = process.env.MONGODB_URL || "mongodb+srv://ubademy:business@cluster0.w31lx.mongodb.net/Business?retryWrites=true&w=majority";
+
 const MONGO_SHORT_ID_LEN = 12
 const MONGO_LONG_ID_LEN = 24
 //const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
