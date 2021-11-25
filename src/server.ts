@@ -92,7 +92,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   app.get("/course/:id", async (req: Request, res: Response) => {
     try{
       let id = req.params.id;
-      const Id = schema(String)
+      const Id = schema(String);
       if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
         res.send(config.get_status_message("invalid_course_id"));
         return;
@@ -112,6 +112,48 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
     }
   });
 
+
+
+  function send_filtered_courses(res: Response, filter_document: any, projection_document: any) {
+    try{
+      business_db.collection("Courses").find(filter_document, {projection: projection_document}).toArray(function(err, result) {
+        if (err) {
+          let message = config.get_status_message("unexpected_error");
+          res.status(message["code"]).send(message);
+        } else if (result === undefined) {
+          res.send(config.get_status_message("non_existent_filter"));
+        } else {
+          let courses: any = <Array<Document>>result;
+          courses.forEach((course: any) => {
+            course.image = course.images[0];
+            course.images = undefined;
+          });
+          res.send({
+            ...config.get_status_message("data_sent"),
+            "courses": courses
+          });
+        }
+      });
+    } catch (err) {
+      console.log(err);
+      let message = config.get_status_message("unexpected_error");
+      res.status(message["code"]).send(message);
+    }
+  }
+
+
+  //TODO: VER SI METEMOS UN ENDPOINT PARA VER LOS TIPOS DE FILTRADO QUE HAY
+  app.get("/organized_courses/:filter_type/:filter", async (req: Request, res: Response) => {
+    let filter_type = req.params.filter_type;
+    if (filter_type === "course_type") {
+      send_filtered_courses(res, {"course_type": req.params.filter}, {"title": 1, "images": 1, "subscription_type": 1});
+    } else if (filter_type === "subscription_type") {
+      send_filtered_courses(res, {"subscription_type": req.params.filter}, {"title": 1, "images": 1, "course_type": 1});
+    } else {
+      res.send(config.get_status_message("non_existent_filter_type"));
+    }
+  });
+
   app.put("/update_course", async (req: Request, res: Response) => {
     try {
       let new_course: Course = new Course(req.body);
@@ -128,7 +170,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
         return;
       }
       //Check if the editor is the creator
-      if (new_course.creator_email !== course_to_update["creator_email"]){
+      if (new_course.creator_email !== course_to_update["creator_email"]) {
         res.send(config.get_status_message("invalid_editor"));
         return;
       }
@@ -159,7 +201,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   app.use(body_parser.json());
   app.post("/create_profile", async (req: Request, res: Response) => {
     try {
-      const user_profile = new UserProfile(req.body.name, req.body.email, "", "Free", []);
+      const user_profile = new UserProfile("", "", req.body.email, "", "Free", []);
       await profiles_table.insertOne(user_profile);
       res.send(config.get_status_message("profile_created"));
     } catch (e) {
@@ -179,7 +221,8 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   app.use(body_parser.json());
   app.post("/update_profile", async (req: Request, res: Response) => {
     try {
-      const user_profile = new UserProfile(req.body.name, req.body.email, req.body.country, req.body.subscription_type, req.body.interesting_genres);
+      const user_profile = new UserProfile(req.body.name, req.body.profile_picture, req.body.email, 
+                                           req.body.country, req.body.subscription_type, req.body.interesting_genres);
       const query = { "email": req.body.email };
       const update = { "$set": user_profile };
       const options = { "upsert": false };
