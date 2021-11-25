@@ -1,33 +1,26 @@
 version: '3.3'
-services: 
-  mongo_db:
-    image: mongo:latest
-    container_name: mongo-container
+services:
+  mongodb_business:
+    container_name: mongo_db
+    image: mongo
     expose:
       - "27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=mongoadmin
-      - MONGO_INITDB_ROOT_PASSWORD=secret
-    networks:
-      - my-network
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./mongodb/database:/data/db
 
   backend_business:
     build: .
-    container_name: compose_backend_business
+    container_name: business
     image: backend_business
-    environment:
-      - DATABASE_URL="mongodb://mongoadmin:secret@mongo_db:27017/"
     ports:
-      - "8001:8001"
+      - "8002:8002"
     expose:
-      - "8001"
+      - "8002"
     volumes:
-      - ./../taller2-ubademy-users:/app
+      - .:/app
+      - /app/node_modules
     depends_on:
-      - mongo_db
-    networks:
-      - my-network
-
-networks:
-  my-network:
-    driver: bridge
+      - mongodb_business

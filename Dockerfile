@@ -7,12 +7,16 @@ COPY package.json /app/
 COPY package-lock.json /app/
 COPY package* /app/
 COPY tsconfig.json /app/
+COPY newrelic.js /app/
+COPY src /app/src
+COPY test /app/test
 
 RUN pwd
 RUN ls
 
 
-RUN npm i
+RUN npm install --only=dev
+RUN npm i -g
 
 EXPOSE 8002
 
@@ -26,9 +30,5 @@ ENV MONGODB_URL="mongodb://mongodb_business:27017"
 
 ENV BUSINESS_DATABASE="Business"
 ENV PROFILES_TABLE="Profiles"
-
-COPY src /app/src
-COPY test /app/test
-COPY newrelic.js /app/
 
 CMD npm start
