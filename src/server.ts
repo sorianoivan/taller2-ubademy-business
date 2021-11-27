@@ -17,7 +17,7 @@ let profiles = require("./endpoints/profiles");
 
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
 // The string is from the test db
-const url = process.env.MONGODB_URL || "mongodb+srv://ubademy:business@cluster0.w31lx.mongodb.net/Business?retryWrites=true&w=majority";
+const url = process.env.MONGODB_URL;
 
 const MONGO_SHORT_ID_LEN = 12
 const MONGO_LONG_ID_LEN = 24
@@ -37,23 +37,6 @@ export function connect_to_database() {
 
 export function create_server(business_db: Db) {//Db is the type for a mongo database
   const app: Application = express();
-
-  const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
-  const courses_table = business_db.collection("Courses");
-
-  // if (url.includes("cluster0")) {
-  //   profiles_table.deleteMany({});
-  //   courses_table.deleteMany({});
-  // }
-
-  app.get("/drop_db", (req: Request, res: Response) => {
-    // If the link is form the test db
-    if (url.includes("cluster0")) {
-      profiles_table.deleteMany({});
-      courses_table.deleteMany({});
-    }
-    res.send("Ok");
-  });
 
   app.get("/", (req: Request, res: Response) => {
     res.send("Hello world!");
