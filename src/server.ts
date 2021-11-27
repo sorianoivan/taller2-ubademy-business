@@ -46,10 +46,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
 
   app.use("/courses", courses);
 
-  // PROFILES //
-
   app.use("/profiles", profiles);
-  
 
   return app;
 }
