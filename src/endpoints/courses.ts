@@ -28,6 +28,12 @@ router.post("/create", async (req: Request, res: Response) => {
         console.log(course);//To debug
         await courses_table.insertOne(course);
         console.log("Course succesfully inserted");
+        let course_id = await courses_table.findOne({creator_email: course.creator_email, title: course.title}, {projection: {_id: 1}})._id;
+
+        // TODO: AGREGAR UN INSERT DE EXAMENES DEL CURSO EN LA COLLECTION DE EXAMENES CON EL MISMO ID QUE EL CURSO
+        console.log(course_id);
+
+
         res.send(config.get_status_message("course_created"));
     } catch (err) {
         let e = <Error>err;
