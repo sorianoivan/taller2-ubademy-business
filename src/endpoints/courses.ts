@@ -10,7 +10,10 @@ import e from "express";
 const body_parser = require('body-parser');
 const mongo = require("mongodb")
 import { get_profile_schema } from "../lone_schemas/get_profile"
+import { create_exam_schema } from "../lone_schemas/create_exam"
 import { business_db } from "../index"
+import { courses_table } from "../index"
+import { exams_table } from "../index"
 
 let router = express.Router();
 
@@ -23,7 +26,7 @@ router.post("/create", async (req: Request, res: Response) => {
     try {
         let course: Course = new Course(req.body);
         console.log(course);//To debug
-        await business_db.collection("Courses").insertOne(course);
+        await courses_table.insertOne(course);
         console.log("Course succesfully inserted");
         res.send(config.get_status_message("course_created"));
     } catch (err) {
@@ -48,7 +51,7 @@ router.get("/:id", async (req: Request, res: Response) => {
             res.send(config.get_status_message("invalid_course_id"));
             return;
         }
-        const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(id)});
+        const my_course = await courses_table.findOne({_id: new ObjectId(id)});
         if (my_course == null) {
             res.send(config.get_status_message("inexistent_course"));
             return;
@@ -67,7 +70,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 function send_filtered_courses(res: Response, filter_document: any, projection_document: any) {
     try{
-        business_db.collection("Courses").find(filter_document, {projection: projection_document}).toArray(function(err: any, result: any) {
+        courses_table.find(filter_document, {projection: projection_document}).toArray(function(err: any, result: any) {
         if (err) {
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
@@ -115,7 +118,7 @@ router.put("/update", async (req: Request, res: Response) => {
             res.send(config.get_status_message("invalid_course_id"));
             return;
         }
-        const course_to_update = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
+        const course_to_update = await courses_table.findOne({_id: new ObjectId(req.body.id)});
         if (course_to_update == null) {
             res.send(config.get_status_message("inexistent_course"));
             return;
@@ -128,7 +131,7 @@ router.put("/update", async (req: Request, res: Response) => {
 
         const update = { "$set": new_course };
         const options = { "upsert": false };
-        let { matchedCount, modifiedCount } = await business_db.collection("Courses").updateOne(course_to_update, update, options);
+        let { matchedCount, modifiedCount } = await courses_table.updateOne(course_to_update, update, options);
         console.log("matched: ", matchedCount);
         console.log("modified: ", modifiedCount);
         res.send(config.get_status_message("course_updated"));
@@ -145,5 +148,52 @@ router.put("/update", async (req: Request, res: Response) => {
         }
     }
 });
+
+
+router.put("/create_exam", async (req: Request, res: Response) => {
+    if (create_exam_schema(req.body)) {
+        try {
+            let course: Course = new Course(req.body);
+            console.log(course);//To debug
+            await courses_table.insertOne(course);
+            console.log("Course succesfully inserted");
+            res.send(config.get_status_message("course_created"));
+        } catch (err) {
+            let e = <Error>err;
+            console.log("Error creating course: ", e);
+            if (e.name === "MongoServerError") {
+                res.send(config.get_status_message("duplicate_course"));
+            } else if (e.name ===  "InvalidConstructionParameters"){
+                res.send(config.get_status_message("invalid_body"));
+            } else {
+                let message = config.get_status_message("unexpected_error");
+                res.status(message["code"]).send(message);
+            }
+        }
+    } else {
+        // TODO: MANDAR MENSAJE DE PARAMETROS MAL HECHOS
+    }
+
+
+    try {
+        let course: Course = new Course(req.body);
+        console.log(course);//To debug
+        await courses_table.insertOne(course);
+        console.log("Course succesfully inserted");
+        res.send(config.get_status_message("course_created"));
+    } catch (err) {
+        let e = <Error>err;
+        console.log("Error creating course: ", e);
+        if (e.name === "MongoServerError") {
+            res.send(config.get_status_message("duplicate_course"));
+        } else if (e.name ===  "InvalidConstructionParameters"){
+            res.send(config.get_status_message("invalid_body"));
+        } else {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    }
+});
+
 
 module.exports = router;
