@@ -10,17 +10,23 @@ import e from "express";
 const body_parser = require('body-parser');
 const mongo = require("mongodb")
 import { get_profile_schema } from "./lone_schemas/get_profile"
+import request from "supertest";
 let courses = require("./endpoints/courses");
 let profiles = require("./endpoints/profiles");
 
+
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
-const url = process.env.MONGODB_URL || "mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority";
+// The string is from the test db
+const url = process.env.MONGODB_URL;
+
+const MONGO_SHORT_ID_LEN = 12
+const MONGO_LONG_ID_LEN = 24
 //const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 
 export function connect_to_database() {
   const mongo_client = new mongo.MongoClient(url);
   try {
-    mongo_client.connect();//Agrego .then()?
+    mongo_client.connect().then({});
     console.log("Connected correctly to server");
   } catch (err) {
     console.log(err);
