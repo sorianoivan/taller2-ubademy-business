@@ -31,4 +31,6 @@ ENV MONGODB_URL="mongodb://mongodb_business:27017"
 ENV BUSINESS_DATABASE="Business"
 ENV PROFILES_TABLE="Profiles"
 
+ENV PAYMENTS_BACKEND_URL='http://backend_payments:8003'
+
 CMD npm start

@@ -11,17 +11,33 @@ const body_parser = require('body-parser');
 const mongo = require("mongodb")
 import { get_profile_schema } from "../lone_schemas/get_profile"
 import { profiles_table } from "../index"
-
+const axios = require("axios");
 
 let router = express.Router();
 
 // const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
+
+const PAYMENTS_BACKEND_URL = process.env.PAYMENTS_BACKEND_URL;
 
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
         const user_profile = new UserProfile("", "", req.body.email, "", "Free", []);
         await profiles_table.insertOne(user_profile);
+        //Send request to create wallet to payments backend
+        axios.post(PAYMENTS_BACKEND_URL + "/wallet", {
+            email: req.body.email,
+        })
+        .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
+            console.log(response.data);
+            console.log(response.status);
+            //Chequear si status es error y devolver el mensaje correspondiente
+            //Ver si hace falta meter algo de la wallet en el perfil.
+        })
+        .catch((error:any) => {
+            console.log(error);
+            //retornar error
+        });
         res.send(config.get_status_message("profile_created"));
     } catch (e) {
         let error = <Error>e;
