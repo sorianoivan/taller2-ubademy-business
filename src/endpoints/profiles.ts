@@ -81,6 +81,56 @@ router.post("/update", async (req: Request, res: Response) => {
     }
 });
 
+router.use(body_parser.json());
+router.post("/modify_subscription", async (req: Request, res: Response) => {
+    try {
+       //buscar al usuario en profiles table
+       profiles_table.find({"email": req.body.email}).toArray(function(err: any, result: any) {
+        if (err) {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        } else if (result === undefined) {
+            let message = config.get_status_message("non_existent_user");//Shouldnt happen
+            res.status(message["code"]).send(message);
+        } else if (result.length !== 1) {//Si length da 0 entra aca
+            console.log("RESULTADOS: ", result.length);
+            let message = config.get_status_message("duplicated_profile");
+            res.status(message["code"]).send(message);
+        } else {
+            let document: any = (<Array<Document>>result)[0];
+            console.log("USUARIO:", document);
+        }
+        });
+        axios.post(PAYMENTS_BACKEND_URL + "/deposit", {
+            email: req.body.email,
+            amountInEthers: "0.0001"
+        })
+        .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
+            console.log(response.data);
+            console.log(response.status);
+            //Chequear si status es error y devolver el mensaje correspondiente
+            //Ver si hace falta meter algo de la wallet en el perfil.
+            res.send( {"status":"ok", "message":response.data})
+        })
+        .catch((error:any) => {
+            console.log(error);
+            //retornar error
+            res.send( {"status":"ok", "message":error});
+        });
+       //Comparar la subscripcion que tiene y la que quiere y calcular lo q tiene que pagar
+       //Mandar request createDeposit a payments 
+    } catch (e) {
+        let error = <Error>e;
+        console.log(error.name);
+        if (error.name === "InvalidConstructionParameters") {
+            res.send(config.get_status_message("invalid_body"));
+        } else {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    }
+});
+
 router.get("/countries", (req: Request, res: Response) => {
     res.send({
         ...config.get_status_message("data_sent"), 
