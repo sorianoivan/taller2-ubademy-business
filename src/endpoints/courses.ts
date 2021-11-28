@@ -158,7 +158,7 @@ router.put("/update", async (req: Request, res: Response) => {
 });
 
 
-router.put("/create_exam", async (req: Request, res: Response) => {
+router.post("/create_exam", async (req: Request, res: Response) => {
     if (create_exam_schema(req.body)) {
         try {
             let course: Course = new Course(req.body);
