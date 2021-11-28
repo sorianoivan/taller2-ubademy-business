@@ -161,14 +161,27 @@ router.put("/update", async (req: Request, res: Response) => {
 router.post("/create_exam", async (req: Request, res: Response) => {
     if (create_exam_schema(req.body)) {
         try {
-            let course: Course = new Course(req.body);
-            console.log(course);//To debug
-            await courses_table.insertOne(course);
-            console.log("Course succesfully inserted");
-            res.send(config.get_status_message("course_created"));
+            let course_doc = await courses_table.findOne({_id: req.body.course_id}, {projection: { total_exams: 1 }});
+            let exams_doc = await exams_table.findOne({_id: req.body.course_id}, {projection: { exams: 1 }});
+            if (course_doc === undefined) {
+                res.send(config.get_status_message("course_not_found"));
+            } else if (exams_doc === undefined) {
+                let message = config.get_status_message("no_exam_doc_for_course");
+                res.status(message["code"]).send(message);
+            } else {
+                let max_exams_amount = course_doc.total_exams;
+                let existing_exams = exams_doc.exams;
+                if (max_exams_amount !== existing_exams.length) {
+                    
+                    res.send(config.get_status_message("exam_created"));
+                } else {
+                    let message = config.get_status_message("max_number_of_exams");
+                    res.status(message["code"]).send(message);
+                }
+            }
         } catch (err) {
             let e = <Error>err;
-            console.log("Error creating course: ", e);
+            console.log("Error creating exam: ", e);
             if (e.name === "MongoServerError") {
                 res.send(config.get_status_message("duplicate_course"));
             } else if (e.name ===  "InvalidConstructionParameters"){
@@ -180,26 +193,6 @@ router.post("/create_exam", async (req: Request, res: Response) => {
         }
     } else {
         // TODO: MANDAR MENSAJE DE PARAMETROS MAL HECHOS
-    }
-
-
-    try {
-        let course: Course = new Course(req.body);
-        console.log(course);//To debug
-        await courses_table.insertOne(course);
-        console.log("Course succesfully inserted");
-        res.send(config.get_status_message("course_created"));
-    } catch (err) {
-        let e = <Error>err;
-        console.log("Error creating course: ", e);
-        if (e.name === "MongoServerError") {
-            res.send(config.get_status_message("duplicate_course"));
-        } else if (e.name ===  "InvalidConstructionParameters"){
-            res.send(config.get_status_message("invalid_body"));
-        } else {
-            let message = config.get_status_message("unexpected_error");
-            res.status(message["code"]).send(message);
-        }
     }
 });
 
