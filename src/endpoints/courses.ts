@@ -14,6 +14,7 @@ import { create_exam_schema } from "../lone_schemas/create_exam"
 import { business_db } from "../index"
 import { courses_table } from "../index"
 import { exams_table } from "../index"
+import { Exam } from "../models/exam"
 
 let router = express.Router();
 
@@ -172,7 +173,8 @@ router.post("/create_exam", async (req: Request, res: Response) => {
                 let max_exams_amount = course_doc.total_exams;
                 let existing_exams = exams_doc.exams;
                 if (max_exams_amount !== existing_exams.length) {
-                    
+                    let exam = new Exam(req.body.exam_name, req.body.questions, []);
+                    await exams_table.insertOne({ _id: new ObjectId(req.body.course_id), ...exam });
                     res.send(config.get_status_message("exam_created"));
                 } else {
                     let message = config.get_status_message("max_number_of_exams");
