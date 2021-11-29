@@ -16,5 +16,12 @@
 "invalid_course_id": {"status": "error", "message": "invalid_course_id"},
 "invalid_editor": {"status": "error", "message": "invalid_editor"},
 "non_existent_filter": {"status": "error", "message": "invalid filter"},
-"non_existent_filter_type": {"status": "error", "message": "invalid filter type"}
+"non_existent_filter_type": {"status": "error", "message": "invalid filter type"},
+"exam_created": {"status": "ok", "message": "exam succesfully created"},
+"no_exam_doc_for_course": {"status": "error", "message": "no exam document entry for existing course", "code": 413},
+"max_number_of_exams": {"status": "error", "message": "exams cap already reached"},
+"exam_already_exists": {"status": "error", "message": "exam name in use"},
+"non_existent_exam": {"status": "error", "message": "non existent exam"},
+"exam_published": {"status": "ok", "message": "exam published"}
+
 }

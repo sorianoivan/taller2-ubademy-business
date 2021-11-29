@@ -44,6 +44,12 @@ let mongo_client = connect_to_database();
 export const business_db = mongo_client.db(<string>"Business");
 export const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 export const courses_table = business_db.collection(process.env.COURSES_TABLE || "Courses");
+export const exams_table = business_db.collection(process.env.EXAMS_TABLE || "Exams");
+
+// courses_table.deleteMany({});
+// profiles_table.deleteMany({});
+// exams_table.deleteMany({});
+
 let server = start_server(business_db);
 
 //This is to close everything correctly with ctrl + c

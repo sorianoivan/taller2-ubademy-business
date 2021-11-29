@@ -10,7 +10,12 @@ import e from "express";
 const body_parser = require('body-parser');
 const mongo = require("mongodb")
 import { get_profile_schema } from "../lone_schemas/get_profile"
+import { create_exam_schema } from "../lone_schemas/create_exam"
+import { publish_exam_schema } from "../lone_schemas/publish_exam"
 import { business_db } from "../index"
+import { courses_table } from "../index"
+import { exams_table } from "../index"
+import { Exam } from "../models/exam"
 
 let router = express.Router();
 
@@ -23,9 +28,19 @@ router.post("/create", async (req: Request, res: Response) => {
     try {
         let course: Course = new Course(req.body);
         console.log(course);//To debug
-        await business_db.collection("Courses").insertOne(course);
+        await courses_table.insertOne(course);
         console.log("Course succesfully inserted");
-        res.send(config.get_status_message("course_created"));
+
+        //TODO: TAL VEZ NO HACE FALTA HACER ESTE FIND PORQUE INSERT YA TE DEVUELVE EL ID, SE PUEDE CAMBIAR
+        let found_course = await courses_table.findOne({creator_email: course.creator_email, title: course.title}, {projection: {_id: 1}});
+        if (found_course === undefined) {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+            return;
+        }
+        let course_id = found_course._id;
+        await exams_table.insertOne({_id: course_id, exams: [], exams_amount: 0});
+        res.send({...config.get_status_message("course_created"), "id": course_id});
     } catch (err) {
         let e = <Error>err;
         console.log("Error creating course: ", e);
@@ -48,7 +63,7 @@ router.get("/:id", async (req: Request, res: Response) => {
             res.send(config.get_status_message("invalid_course_id"));
             return;
         }
-        const my_course = await business_db.collection("Courses").findOne({_id: new ObjectId(id)});
+        const my_course = await courses_table.findOne({_id: new ObjectId(id)});
         if (my_course == null) {
             res.send(config.get_status_message("inexistent_course"));
             return;
@@ -67,7 +82,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 function send_filtered_courses(res: Response, filter_document: any, projection_document: any) {
     try{
-        business_db.collection("Courses").find(filter_document, {projection: projection_document}).toArray(function(err: any, result: any) {
+        courses_table.find(filter_document, {projection: projection_document}).toArray(function(err: any, result: any) {
         if (err) {
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
@@ -115,7 +130,7 @@ router.put("/update", async (req: Request, res: Response) => {
             res.send(config.get_status_message("invalid_course_id"));
             return;
         }
-        const course_to_update = await business_db.collection("Courses").findOne({_id: new ObjectId(req.body.id)});
+        const course_to_update = await courses_table.findOne({_id: new ObjectId(req.body.id)});
         if (course_to_update == null) {
             res.send(config.get_status_message("inexistent_course"));
             return;
@@ -128,7 +143,7 @@ router.put("/update", async (req: Request, res: Response) => {
 
         const update = { "$set": new_course };
         const options = { "upsert": false };
-        let { matchedCount, modifiedCount } = await business_db.collection("Courses").updateOne(course_to_update, update, options);
+        let { matchedCount, modifiedCount } = await courses_table.updateOne(course_to_update, update, options);
         console.log("matched: ", matchedCount);
         console.log("modified: ", modifiedCount);
         res.send(config.get_status_message("course_updated"));
@@ -145,5 +160,77 @@ router.put("/update", async (req: Request, res: Response) => {
         }
     }
 });
+
+
+router.post("/create_exam", async (req: Request, res: Response) => {
+    if (create_exam_schema(req.body) && (req.body.questions.length !== 0)) {
+        try {
+            let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "total_exams": 1 }});
+            let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
+
+            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
+
+            if (course_doc === undefined) {
+                res.send(config.get_status_message("course_not_found"));
+            } else if (exams_doc === undefined) {
+                let message = config.get_status_message("no_exam_doc_for_course");
+                res.status(message["code"]).send(message);
+            } else {
+                let max_exams_amount = course_doc.total_exams;
+                let existing_exams = exams_doc.exams_amount;
+                if (max_exams_amount !== existing_exams) {
+                    let exam = new Exam(req.body.exam_name, req.body.questions, []);
+                    let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { exams: 1 }});
+                    if (existing_exam === null) {
+                        await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$push": {"exams": exam}, "$set": {"exams_amount": existing_exams + 1}});
+                        res.send(config.get_status_message("exam_created"));
+                    } else {
+                        res.send(config.get_status_message("exam_already_exists"));
+                    }
+                } else {
+                    let message = config.get_status_message("max_number_of_exams");
+                    res.send(message);
+                }
+            }
+        } catch (err) {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
+
+router.post("/publish_exam", async (req: Request, res: Response) => {
+    if (publish_exam_schema(req.body)) {
+        try {
+            //let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "total_exams": 1 }});
+            let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
+
+            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
+
+            if (exams_doc === undefined) {
+                let message = config.get_status_message("no_exam_doc_for_course");
+                res.status(message["code"]).send(message);
+            } else {
+                let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { exams: 1 }});
+                if (existing_exam === null) {
+                    res.send(config.get_status_message("non_existent_exam"));
+                    return;
+                } else {
+                    await exams_table.updateOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {"$set": {"exams.$.is_published": true}});
+                    res.send(config.get_status_message("exam_published"));
+                }
+            }
+        } catch (err) {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
 
 module.exports = router;
