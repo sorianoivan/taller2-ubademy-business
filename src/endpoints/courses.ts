@@ -11,6 +11,7 @@ const body_parser = require('body-parser');
 const mongo = require("mongodb")
 import { get_profile_schema } from "../lone_schemas/get_profile"
 import { create_exam_schema } from "../lone_schemas/create_exam"
+import { publish_exam_schema } from "../lone_schemas/publish_exam"
 import { business_db } from "../index"
 import { courses_table } from "../index"
 import { exams_table } from "../index"
@@ -178,7 +179,6 @@ router.post("/create_exam", async (req: Request, res: Response) => {
                 if (max_exams_amount !== existing_exams) {
                     let exam = new Exam(req.body.exam_name, req.body.questions, []);
                     let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { exams: 1 }});
-                    console.log(existing_exam);
                     if (existing_exam === null) {
                         await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$push": {"exams": exam}, "$set": {"exams_amount": existing_exams + 1}});
                         res.send(config.get_status_message("exam_created"));
@@ -191,14 +191,39 @@ router.post("/create_exam", async (req: Request, res: Response) => {
                 }
             }
         } catch (err) {
-            let e = <Error>err;
-            console.log("Error creating exam: ", e);
-            if (e.name === "MongoServerError") {
-                res.send(config.get_status_message("duplicate_course"));
-            } else {
-                let message = config.get_status_message("unexpected_error");
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
+
+router.post("/publish_exam", async (req: Request, res: Response) => {
+    if (publish_exam_schema(req.body)) {
+        try {
+            //let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "total_exams": 1 }});
+            let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
+
+            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
+
+            if (exams_doc === undefined) {
+                let message = config.get_status_message("no_exam_doc_for_course");
                 res.status(message["code"]).send(message);
+            } else {
+                let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { exams: 1 }});
+                if (existing_exam === null) {
+                    res.send(config.get_status_message("non_existent_exam"));
+                    return;
+                } else {
+                    await exams_table.updateOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {"$set": {"exams.$.is_published": true}});
+                    res.send(config.get_status_message("exam_published"));
+                }
             }
+        } catch (err) {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
         }
     } else {
         res.send(config.get_status_message("invalid_body"));
