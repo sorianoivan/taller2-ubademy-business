@@ -30,6 +30,8 @@ router.post("/create", async (req: Request, res: Response) => {
         console.log(course);//To debug
         await courses_table.insertOne(course);
         console.log("Course succesfully inserted");
+
+        //TODO: TAL VEZ NO HACE FALTA HACER ESTE FIND PORQUE INSERT YA TE DEVUELVE EL ID, SE PUEDE CAMBIAR
         let found_course = await courses_table.findOne({creator_email: course.creator_email, title: course.title}, {projection: {_id: 1}});
         if (found_course === undefined) {
             let message = config.get_status_message("unexpected_error");
@@ -161,7 +163,7 @@ router.put("/update", async (req: Request, res: Response) => {
 
 
 router.post("/create_exam", async (req: Request, res: Response) => {
-    if (create_exam_schema(req.body)) {
+    if (create_exam_schema(req.body) && (req.body.questions.length !== 0)) {
         try {
             let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "total_exams": 1 }});
             let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
