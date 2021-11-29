@@ -36,8 +36,8 @@ router.post("/create", async (req: Request, res: Response) => {
             return;
         }
         let course_id = found_course._id;
-        await exams_table.insertOne({_id: course_id, exams: []});
-        res.send(config.get_status_message("course_created"));
+        await exams_table.insertOne({_id: course_id, exams: [], exams_amount: 0});
+        res.send({...config.get_status_message("course_created"), "id": course_id});
     } catch (err) {
         let e = <Error>err;
         console.log("Error creating course: ", e);
@@ -162,8 +162,11 @@ router.put("/update", async (req: Request, res: Response) => {
 router.post("/create_exam", async (req: Request, res: Response) => {
     if (create_exam_schema(req.body)) {
         try {
-            let course_doc = await courses_table.findOne({_id: req.body.course_id}, {projection: { total_exams: 1 }});
-            let exams_doc = await exams_table.findOne({_id: req.body.course_id}, {projection: { exams: 1 }});
+            let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "total_exams": 1 }});
+            let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
+
+            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
+
             if (course_doc === undefined) {
                 res.send(config.get_status_message("course_not_found"));
             } else if (exams_doc === undefined) {
@@ -171,14 +174,20 @@ router.post("/create_exam", async (req: Request, res: Response) => {
                 res.status(message["code"]).send(message);
             } else {
                 let max_exams_amount = course_doc.total_exams;
-                let existing_exams = exams_doc.exams;
-                if (max_exams_amount !== existing_exams.length) {
+                let existing_exams = exams_doc.exams_amount;
+                if (max_exams_amount !== existing_exams) {
                     let exam = new Exam(req.body.exam_name, req.body.questions, []);
-                    await exams_table.insertOne({ _id: new ObjectId(req.body.course_id), ...exam });
-                    res.send(config.get_status_message("exam_created"));
+                    let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { exams: 1 }});
+                    console.log(existing_exam);
+                    if (existing_exam === null) {
+                        await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$push": {"exams": exam}, "$set": {"exams_amount": existing_exams + 1}});
+                        res.send(config.get_status_message("exam_created"));
+                    } else {
+                        res.send(config.get_status_message("exam_already_exists"));
+                    }
                 } else {
                     let message = config.get_status_message("max_number_of_exams");
-                    res.status(message["code"]).send(message);
+                    res.send(message);
                 }
             }
         } catch (err) {
@@ -186,15 +195,13 @@ router.post("/create_exam", async (req: Request, res: Response) => {
             console.log("Error creating exam: ", e);
             if (e.name === "MongoServerError") {
                 res.send(config.get_status_message("duplicate_course"));
-            } else if (e.name ===  "InvalidConstructionParameters"){
-                res.send(config.get_status_message("invalid_body"));
             } else {
                 let message = config.get_status_message("unexpected_error");
                 res.status(message["code"]).send(message);
             }
         }
     } else {
-        // TODO: MANDAR MENSAJE DE PARAMETROS MAL HECHOS
+        res.send(config.get_status_message("invalid_body"));
     }
 });
 

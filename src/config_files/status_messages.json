@@ -19,5 +19,6 @@
 "non_existent_filter_type": {"status": "error", "message": "invalid filter type"},
 "exam_created": {"status": "ok", "message": "exam succesfully created"},
 "no_exam_doc_for_course": {"status": "error", "message": "no exam document entry for existing course", "code": 413},
-"max_number_of_exams": {"status": "error", "message": "exams cap already reached"}
+"max_number_of_exams": {"status": "error", "message": "exams cap already reached"},
+"exam_already_exists": {"status": "error", "message": "exam name in use"}
 }
