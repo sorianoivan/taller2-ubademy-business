@@ -264,7 +264,7 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                         res.send(config.get_status_message("exam_answered")); return;
                     } else {
                         let exam_mark = answered_exam.exams[0].students_exams.mark;
-                        if (exam_mark >= PASSING_MARK) {
+                        if ((exam_mark >= PASSING_MARK) || (exam_mark === NOT_CORRECTED_MARK)) {
                             res.send(config.get_status_message("exam_passed_or_waiting_correction")); return;
                         } else {
 
@@ -330,7 +330,7 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                             //await exams_table.updateOne(exam_to_update_query, update_document_query);
                             res.send(config.get_status_message("exam_graded")); return;
                         } else {
-                            res.send(config.get_status_message("exam_passed_or_waiting_correction")); return;
+                            res.send(config.get_status_message("exam_already_graded")); return;
                         }
 
                     } else {
