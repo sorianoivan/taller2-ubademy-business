@@ -1,10 +1,10 @@
 {
-
-"subscriptions": {
-    "Free": {"price": 0},
-    "Silver": {"price": 10},
-    "Gold": {"price": 20},
-    "Platinum": {"price": 30}
+    
+    "subscriptions": {
+        "Free": {"price": 0},
+        "Silver": {"price": 0.00001},
+        "Gold": {"price": 0.00005},
+        "Platinum": {"price": 0.0001}
 },
 "public_profile_data": ["name", "profile_picture_link", "email", "interesting_genres"]
 
