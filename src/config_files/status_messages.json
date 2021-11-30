@@ -27,5 +27,6 @@
 "exam_answered": {"status": "ok", "message": "exam answered"},
 "exam_passed_or_waiting_correction": {"status": "error", "message": "exam passed or awaiting correction"},
 "exam_not_completed": {"status": "error", "message": "exam not completed"},
-"correction_not_completed": {"status": "error", "message": "correction not completed"}
+"correction_not_completed": {"status": "error", "message": "correction not completed"},
+"exam_graded": {"status": "ok", "message": "exam graded"}
 }

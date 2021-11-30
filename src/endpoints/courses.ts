@@ -246,9 +246,6 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
             } else {
                 let questions = existing_exam.exams[0].questions;
                 if (questions.length === req.body.answers.length) {
-                    // let answered_exam_query = {_id: new ObjectId(req.body.course_id), 
-                    //     "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
-                    //     "students_exams": {"$elemMatch": {"student_email": req.body.student_email, "status": NOT_CORRECTED_STATUS}}}}};
                     let answered_exam_query = {_id: new ObjectId(req.body.course_id), 
                         "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
                         "students_exams": {"$elemMatch": {"student_email": req.body.student_email}}}}};
@@ -308,53 +305,35 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
             } else {
                 let questions = existing_exam.exams[0].questions;
                 if (questions.length === req.body.corrections.length) {
-                    // let answered_exam_query = {_id: new ObjectId(req.body.course_id), 
-                    //     "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
-                    //     "students_exams": {"$elemMatch": {"student_email": req.body.student_email, "status": NOT_CORRECTED_STATUS}}}}};
                     let answered_exam_query = {_id: new ObjectId(req.body.course_id), 
                         "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
                         "students_exams": {"$elemMatch": {"student_email": req.body.student_email}}}}};
-                    let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.status.$": 1 }});
+                    //let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.status.$": 1 }});
+                    let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.mark.$": 1 }});
                     if (answered_exam !== null) {
-                        //let student_exam = new CompletedExam(req.body.student_email, req.body.answers, [], NOT_CORRECTED_STATUS);
-                        // let exam_to_update_query = {
-                        //     _id: new ObjectId(req.body.course_id), 
-                        //     "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
-                        //     "students_exams": {"$elemMatch": {"student_email": req.body.student_email, "status": NOT_CORRECTED_STATUS}}}}};
+                        let past_mark = answered_exam.exams[0].students_exams.mark;
+                        if ((past_mark <= PASSING_MARK) && (past_mark !== -1)) {
 
-                        //TODO: AGREGAR CHEQUEO DE QUE SI EL EXAMEN ESTA APROBADO HAY QUE FIJARSE SI EL ALUMNO AL QUE SE CORRIGIO APROBO TODOS LOS EXAMENES,
-                        //SI APROBO TODOS ENTONCES SE GUARDA EN SU PERFIL/OTRO LADO QUE APROBO EL CURSO
+                            //TODO: AGREGAR CHEQUEO DE QUE SI EL EXAMEN ESTA APROBADO (req.body.mark) HAY QUE FIJARSE SI EL ALUMNO AL QUE SE CORRIGIO APROBO TODOS LOS EXAMENES,
+                            //SI APROBO TODOS ENTONCES SE GUARDA EN SU PERFIL/OTRO LADO QUE APROBO EL CURSO
 
 
-                        // let exam_to_update_query = {_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name};
-                        // let update_document_query = {"$push": {"exams.$.students_exams": student_exam}};
-                        let exam_to_update_query = {_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name};
-                        let update_document_query = {"$set": {"exams.$.students_exams.$.status": NOT_CORRECTED_STATUS, 
-                                                                "exams.$.students_exams.$.professors_notes": []
-                                                            }};
-                        await exams_table.updateOne(exam_to_update_query, update_document_query);
-                        await exams_table.updateOne(exam_to_update_query, update_document_query);
-                        res.send(config.get_status_message("exam_answered")); return;
+                            let exam_to_update_query = {_id: new ObjectId(req.body.course_id), //"exams.exam_name": req.body.exam_name, 
+                                                        exams: { "$elemMatch": {"exam_name": req.body.exam_name, 
+                                                        "students_exams": { "$elemMatch": {"student_email": req.body.student_email}}}}
+                                                        };
+                            let update_document_query = {"$set": {"exams.$.students_exams.$.mark": <Number>req.body.mark, 
+                                                                "exams.$.students_exams.$.professors_notes": req.body.corrections
+                                                        }};
+                            await exams_table.updateOne(exam_to_update_query, update_document_query);
+                            //await exams_table.updateOne(exam_to_update_query, update_document_query);
+                            res.send(config.get_status_message("exam_graded")); return;
+                        } else {
+                            res.send(config.get_status_message("exam_passed_or_waiting_correction")); return;
+                        }
+
                     } else {
-
-                            res.send(config.get_status_message("correction_not_completed")); return;
-
-
-                        // let exam_status = answered_exam.exams[0].students_exams.status;
-                        // if (exam_status !== FAILED_STATUS) {
-                        //     res.send(config.get_status_message("exam_passed_or_waiting_correction")); return;
-                        // } else {
-
-                        //     //TODO: PROBAR ESTO UNA VEZ QUE SE DEJE CORREGIR EXAMENES
-
-                        //     let exam_to_update_query = {_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name};
-                        //     let update_document_query = {"$set": {"exams.$.students_exams.$.status": NOT_CORRECTED_STATUS, 
-                        //                                           "exams.$.students_exams.$.answers": req.body.answers,
-                        //                                           "exams.$.students_exams.$.professors_notes": []
-                        //                                         }};
-                        //     await exams_table.updateOne(exam_to_update_query, update_document_query);
-                        //     res.send(config.get_status_message("exam_answered")); return;
-                        // }
+                            res.send(config.get_status_message("exam_not_completed")); return;
                     }
                 } else {
                     res.send(config.get_status_message("wrong_answers_amount")); return;
