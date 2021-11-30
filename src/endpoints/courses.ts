@@ -32,6 +32,7 @@ const MONGO_LONG_ID_LEN = 24;
 // const FAILED_STATUS = "Failed";
 // const PASSED_CORRECTED_STATUS = "Passed";
 const PASSING_MARK = 4;
+const NOT_CORRECTED_MARK = -1;
 
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
@@ -252,7 +253,7 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                     let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.mark.$": 1 }});
                     if (answered_exam === null) {
                         //let student_exam = new CompletedExam(req.body.student_email, req.body.answers, [], NOT_CORRECTED_STATUS);
-                        let student_exam = new CompletedExam(req.body.student_email, req.body.answers, [], -1);
+                        let student_exam = new CompletedExam(req.body.student_email, req.body.answers, [], NOT_CORRECTED_MARK);
                         // let exam_to_update_query = {
                         //     _id: new ObjectId(req.body.course_id), 
                         //     "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
@@ -272,7 +273,7 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                             let exam_to_update_query = {_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name};
                             let update_document_query = {"$set": {
                                                                   //"exams.$.students_exams.$.status": NOT_CORRECTED_STATUS, 
-                                                                  "exams.$.students_exams.$.mark": -1, //Not corrected
+                                                                  "exams.$.students_exams.$.mark": NOT_CORRECTED_MARK,
                                                                   "exams.$.students_exams.$.answers": req.body.answers,
                                                                   "exams.$.students_exams.$.professors_notes": []
                                                                 }};
@@ -312,7 +313,7 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                     let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.mark.$": 1 }});
                     if (answered_exam !== null) {
                         let past_mark = answered_exam.exams[0].students_exams.mark;
-                        if ((past_mark <= PASSING_MARK) && (past_mark !== -1)) {
+                        if (past_mark === NOT_CORRECTED_MARK) {
 
                             //TODO: AGREGAR CHEQUEO DE QUE SI EL EXAMEN ESTA APROBADO (req.body.mark) HAY QUE FIJARSE SI EL ALUMNO AL QUE SE CORRIGIO APROBO TODOS LOS EXAMENES,
                             //SI APROBO TODOS ENTONCES SE GUARDA EN SU PERFIL/OTRO LADO QUE APROBO EL CURSO
