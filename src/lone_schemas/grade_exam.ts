@@ -6,5 +6,6 @@ export let grade_exam_schema = schema({
     exam_name: String,
     student_email: String,
     professor_email: String,
-    exam_status: ["Passed", "Failed", "Not corrected"]
+    // exam_status: ["Passed", "Failed", "Not corrected"]
+    mark: Number.min(0).max(10)
 });
