@@ -24,6 +24,8 @@
 "non_existent_exam": {"status": "error", "message": "non existent exam"},
 "exam_published": {"status": "ok", "message": "exam published"},
 "wrong_answers_amount": {"status": "error", "message": "questions answers mismatch"},
-"exam_answered": {"status": "error", "message": "exam answered"},
-"exam_passed_or_waiting_correction": {"status": "error", "message": "exam passed or awaiting correction"}
+"exam_answered": {"status": "ok", "message": "exam answered"},
+"exam_passed_or_waiting_correction": {"status": "error", "message": "exam passed or awaiting correction"},
+"exam_not_completed": {"status": "error", "message": "exam not completed"},
+"correction_not_completed": {"status": "error", "message": "correction not completed"}
 }

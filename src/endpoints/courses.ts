@@ -13,11 +13,13 @@ import { get_profile_schema } from "../lone_schemas/get_profile"
 import { create_exam_schema } from "../lone_schemas/create_exam"
 import { publish_exam_schema } from "../lone_schemas/publish_exam"
 import { complete_exam_schema } from "../lone_schemas/complete_exam"
+import { grade_exam_schema } from "../lone_schemas/grade_exam"
 import { business_db } from "../index"
 import { courses_table } from "../index"
 import { exams_table } from "../index"
 import { Exam } from "../models/exam"
 import { CompletedExam } from "../models/completed_exam";
+
 
 
 
@@ -235,9 +237,6 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
         try {
             // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE COMPLETA EL EXAMEN ES ALUMNO DEL CURSO
             
-            //VER SI NO HACE FALTA OTRO ENDPOINT PARA CORREGIR, ES BASTANTE PARECIDO A RESPONDER EL EXAMEN
-            //AGREGAR TODA LA LOGICA DE COMPLETAR EL EXAMEN
- 
             let find_filter = {_id: new ObjectId(req.body.course_id), "exams": { "$elemMatch": {"exam_name": req.body.exam_name}}};
             let existing_exam = await exams_table.findOne(find_filter, {projection: { _id: 1, "exams.questions.$": 1 }});
             if (existing_exam === null) {
@@ -278,6 +277,79 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                             await exams_table.updateOne(exam_to_update_query, update_document_query);
                             res.send(config.get_status_message("exam_answered")); return;
                         }
+                    }
+                } else {
+                    res.send(config.get_status_message("wrong_answers_amount")); return;
+                }
+            }
+        } catch (err) {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
+router.post("/grade_exam", async (req: Request, res: Response) => {
+    if (grade_exam_schema(req.body)) {
+        try {
+            // TODO: VER QUE EL QUE CORRIGE EL EXAMEN SEA DOCENTE O COLABORADOR DEL CURSO            
+ 
+            let find_filter = {_id: new ObjectId(req.body.course_id), "exams": { "$elemMatch": {"exam_name": req.body.exam_name}}};
+            let existing_exam = await exams_table.findOne(find_filter, {projection: { _id: 1, "exams.questions.$": 1 }});
+            if (existing_exam === null) {
+                res.send(config.get_status_message("non_existent_exam")); return;
+            } else {
+                let questions = existing_exam.exams[0].questions;
+                if (questions.length === req.body.corrections.length) {
+                    // let answered_exam_query = {_id: new ObjectId(req.body.course_id), 
+                    //     "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
+                    //     "students_exams": {"$elemMatch": {"student_email": req.body.student_email, "status": NOT_CORRECTED_STATUS}}}}};
+                    let answered_exam_query = {_id: new ObjectId(req.body.course_id), 
+                        "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
+                        "students_exams": {"$elemMatch": {"student_email": req.body.student_email}}}}};
+                    let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.status.$": 1 }});
+                    if (answered_exam !== null) {
+                        //let student_exam = new CompletedExam(req.body.student_email, req.body.answers, [], NOT_CORRECTED_STATUS);
+                        // let exam_to_update_query = {
+                        //     _id: new ObjectId(req.body.course_id), 
+                        //     "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
+                        //     "students_exams": {"$elemMatch": {"student_email": req.body.student_email, "status": NOT_CORRECTED_STATUS}}}}};
+
+                        //TODO: AGREGAR CHEQUEO DE QUE SI EL EXAMEN ESTA APROBADO HAY QUE FIJARSE SI EL ALUMNO AL QUE SE CORRIGIO APROBO TODOS LOS EXAMENES,
+                        //SI APROBO TODOS ENTONCES SE GUARDA EN SU PERFIL/OTRO LADO QUE APROBO EL CURSO
+
+
+                        // let exam_to_update_query = {_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name};
+                        // let update_document_query = {"$push": {"exams.$.students_exams": student_exam}};
+                        let exam_to_update_query = {_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name};
+                        let update_document_query = {"$set": {"exams.$.students_exams.$.status": NOT_CORRECTED_STATUS, 
+                                                                "exams.$.students_exams.$.professors_notes": []
+                                                            }};
+                        await exams_table.updateOne(exam_to_update_query, update_document_query);
+                        await exams_table.updateOne(exam_to_update_query, update_document_query);
+                        res.send(config.get_status_message("exam_answered")); return;
+                    } else {
+
+                            res.send(config.get_status_message("correction_not_completed")); return;
+
+
+                        // let exam_status = answered_exam.exams[0].students_exams.status;
+                        // if (exam_status !== FAILED_STATUS) {
+                        //     res.send(config.get_status_message("exam_passed_or_waiting_correction")); return;
+                        // } else {
+
+                        //     //TODO: PROBAR ESTO UNA VEZ QUE SE DEJE CORREGIR EXAMENES
+
+                        //     let exam_to_update_query = {_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name};
+                        //     let update_document_query = {"$set": {"exams.$.students_exams.$.status": NOT_CORRECTED_STATUS, 
+                        //                                           "exams.$.students_exams.$.answers": req.body.answers,
+                        //                                           "exams.$.students_exams.$.professors_notes": []
+                        //                                         }};
+                        //     await exams_table.updateOne(exam_to_update_query, update_document_query);
+                        //     res.send(config.get_status_message("exam_answered")); return;
+                        // }
                     }
                 } else {
                     res.send(config.get_status_message("wrong_answers_amount")); return;
