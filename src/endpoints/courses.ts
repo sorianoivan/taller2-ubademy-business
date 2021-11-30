@@ -205,10 +205,39 @@ router.post("/create_exam", async (req: Request, res: Response) => {
 router.post("/publish_exam", async (req: Request, res: Response) => {
     if (publish_exam_schema(req.body)) {
         try {
+            let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "_id": 1 }});
+
+            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
+
+            if (exams_doc === undefined) {
+                let message = config.get_status_message("no_exam_doc_for_course");
+                res.status(message["code"]).send(message);
+            } else {
+                let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { exams: 1 }});
+                if (existing_exam === null) {
+                    res.send(config.get_status_message("non_existent_exam"));
+                    return;
+                } else {
+                    await exams_table.updateOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {"$set": {"exams.$.is_published": true}});
+                    res.send(config.get_status_message("exam_published"));
+                }
+            }
+        } catch (err) {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
+router.post("/complete_exam", async (req: Request, res: Response) => {
+    if (publish_exam_schema(req.body)) {
+        try {
             //let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "total_exams": 1 }});
             let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
 
-            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
+            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE COMPLETA EL EXAMEN ES ALUMNO DEL CURSO
 
             if (exams_doc === undefined) {
                 let message = config.get_status_message("no_exam_doc_for_course");
