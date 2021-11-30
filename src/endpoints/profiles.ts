@@ -81,6 +81,64 @@ router.post("/update", async (req: Request, res: Response) => {
     }
 });
 
+//TODO:Estas funciones son para q el endpoint de modify_subscription no sea de 100 lineas pero nose si van aca o en otro archivo
+
+const update_user_subscription = async (email:string, new_subscription:string, res:Response) => {
+    try {
+        const query = { "email": email };
+        const update = { "$set": {subscription_type:new_subscription} };//Ver si esto esta bien
+        const options = { "upsert": false };
+
+        let { matchedCount, modifiedCount } = await profiles_table.updateOne(query, update, options);
+        if (matchedCount === 0) {        
+            let message = config.get_status_message("non_existent_user");
+            res.status(message["code"]).send(message);
+        } else {
+            res.send({"status":"ok", "message":"user subscription updated"});
+        }
+    } catch (e) {
+        let error = <Error>e;
+        console.log(error.name);
+        if (error.name === "InvalidConstructionParameters") {
+            res.send(config.get_status_message("invalid_body"));
+        } else {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    }
+}
+
+const modify_subscription = (result: Array<Document>, new_subscription: string, email:string, res:Response) => {
+    let user: any = (<Array<Document>>result)[0];
+    console.log("USER: ", user);
+    //Chequear si pago hace menos de un mes
+    let old_sub = config.general_data["subscriptions"][user.subscription_type]["price"]
+    let new_sub = config.general_data["subscriptions"][new_subscription]["price"]
+    let amount_to_pay = new_sub - old_sub;
+    if (amount_to_pay <= 0) {
+        res.send({"status":"error", "message":"cannot downgrade subscription"});
+        return;
+    }
+    axios.post(PAYMENTS_BACKEND_URL + "/deposit", {
+        email: email,
+        amountInEthers: amount_to_pay.toString(),
+    })
+    .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
+        console.log(response.data);
+        console.log(response.status);
+        if (response.data["status"] === "ok" && response.data["message"] === "Successful transaction") {//Chequeo las dos cosas por las dudas pero no es neecsario
+            //Hacer update en mongo
+            update_user_subscription(email, new_subscription, res);
+        } else {
+            res.send({"status":"error", "message":response.data})
+        }
+    })
+    .catch((error:any) => {
+        console.log(error);
+        res.send( {"status":"error", "message":error});
+    });
+}
+
 router.use(body_parser.json());
 router.post("/modify_subscription", async (req: Request, res: Response) => {
     try {
@@ -96,36 +154,7 @@ router.post("/modify_subscription", async (req: Request, res: Response) => {
                 let message = config.get_status_message("duplicated_profile");
                 res.status(message["code"]).send(message);
             } else {
-                let user: any = (<Array<Document>>result)[0];
-                let old_sub = config.general_data["subscriptions"][user.subscription_type]["price"]
-                let new_sub = config.general_data["subscriptions"][req.body.new_subscription]["price"]
-                let amount_to_pay = new_sub - old_sub;
-                if (amount_to_pay <= 0) {
-                    res.send({"status":"error", "message":"cannot downgrade subscription"});
-                    return;//Aca hago return xq sino hace la request igual
-                }
-                axios.post(PAYMENTS_BACKEND_URL + "/deposit", {
-                    email: req.body.email,
-                    amountInEthers: amount_to_pay.toString(),
-                })
-                .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
-                    console.log(response.data);
-                    console.log(response.status);
-                    if (response.data["status"] === "ok" && response.data["message"] === "Successful transaction") {//Chequeo las dos cosas por las dudas pero no es neecsario
-                        //Hacer update en mongo
-                        res.send( {"status":"ok", "message":response.data})
-                        return;
-                    } else {
-                        res.send( {"status":"error", "message":response.data})
-                    }
-                    //Chequear si status es error y devolver el mensaje correspondiente
-                    //Ver si hace falta meter algo de la wallet en el perfil.
-                })
-                .catch((error:any) => {
-                    console.log(error);
-                    //retornar error
-                    res.send( {"status":"ok", "message":error});
-                });
+                modify_subscription(result, req.body.new_subscription, req.body.email, res);
             }
         });
     } catch (e) {
