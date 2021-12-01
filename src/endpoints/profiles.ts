@@ -31,12 +31,14 @@ router.post("/create", async (req: Request, res: Response) => {
         .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
             console.log(response.data);
             console.log(response.status);
-            //Chequear si status es error y devolver el mensaje correspondiente
-            //Ver si hace falta meter algo de la wallet en el perfil.
+            if (response.data["status"] !== "ok") {
+                res.send({"status":"error", "message":response.data["message"]});
+            }
         })
         .catch((error:any) => {
-            console.log(error);
-            //retornar error
+            console.log("Error creating wallet: ", error);
+            res.send({"status":"error", "message":"could not create wallet"});
+            return;
         });
         res.send(config.get_status_message("profile_created"));
     } catch (e) {
@@ -81,7 +83,7 @@ router.post("/update", async (req: Request, res: Response) => {
     }
 });
 
-//TODO:Estas funciones son para q el endpoint de modify_subscription no sea de 100 lineas pero nose si van aca o en otro archivo
+//Estas funciones son para q el endpoint de modify_subscription no sea de 100 lineas pero nose si van aca o en otro archivo
 
 const update_user_subscription = async (email:string, new_subscription:string, res:Response) => {
     try {
@@ -111,7 +113,6 @@ const update_user_subscription = async (email:string, new_subscription:string, r
 const modify_subscription = (result: Array<Document>, new_subscription: string, email:string, res:Response) => {
     let user: any = (<Array<Document>>result)[0];
     console.log("USER: ", user);
-    //Chequear si pago hace menos de un mes
     let old_sub = config.general_data["subscriptions"][user.subscription_type]["price"]
     let new_sub = config.general_data["subscriptions"][new_subscription]["price"]
     let amount_to_pay = new_sub - old_sub;
@@ -127,10 +128,9 @@ const modify_subscription = (result: Array<Document>, new_subscription: string, 
         console.log(response.data);
         console.log(response.status);
         if (response.data["status"] === "ok" && response.data["message"] === "Successful transaction") {//Chequeo las dos cosas por las dudas pero no es neecsario
-            //Hacer update en mongo
             update_user_subscription(email, new_subscription, res);
         } else {
-            res.send({"status":"error", "message":response.data})
+            res.send({"status":"error", "message":response.data["message"]})
         }
     })
     .catch((error:any) => {
@@ -148,7 +148,7 @@ router.post("/modify_subscription", async (req: Request, res: Response) => {
                 let message = config.get_status_message("unexpected_error");
                 res.status(message["code"]).send(message);
             } else if (result === undefined) {
-                let message = config.get_status_message("non_existent_user");//Shouldnt happen
+                let message = config.get_status_message("non_existent_user");
                 res.status(message["code"]).send(message);
             } else if (result.length !== 1) {//Si length da 0 entra aca
                 let message = config.get_status_message("duplicated_profile");
