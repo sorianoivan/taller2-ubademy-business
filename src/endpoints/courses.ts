@@ -270,14 +270,27 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
 
                             //TODO: PROBAR ESTO UNA VEZ QUE SE DEJE CORREGIR EXAMENES
 
-                            let exam_to_update_query = {_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name};
+                            //let exam_to_update_query = {_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name};
+                            let exam_to_update_query = {_id: new ObjectId(req.body.course_id), exams: { "$elemMatch": {"exam_name": req.body.exam_name, 
+                            "students_exams": { "$elemMatch": {"student_email": req.body.student_email}}}}};
+
+                            
+
+                            // let update_document_query = {"$set": {
+                            //     //"exams.$.students_exams.$.status": NOT_CORRECTED_STATUS, 
+                            //     "exams.$.students_exams.$.mark": NOT_CORRECTED_MARK,
+                            //     "exams.$.students_exams.$.answers": req.body.answers,
+                            //     "exams.$.students_exams.$.professors_notes": []
+                            //   }};
                             let update_document_query = {"$set": {
                                                                   //"exams.$.students_exams.$.status": NOT_CORRECTED_STATUS, 
-                                                                  "exams.$.students_exams.$.mark": NOT_CORRECTED_MARK,
-                                                                  "exams.$.students_exams.$.answers": req.body.answers,
-                                                                  "exams.$.students_exams.$.professors_notes": []
+                                                                  "exams.$[s].students_exams.$[e].mark": NOT_CORRECTED_MARK,
+                                                                  "exams.$[s].students_exams.$[e].answers": req.body.answers,
+                                                                  "exams.$[s].students_exams.$[e].professors_notes": []
                                                                 }};
-                            await exams_table.updateOne(exam_to_update_query, update_document_query);
+                            let array_filter = {arrayFilters: [ {"e.student_email": req.body.student_email}, {"s.exam_name": req.body.exam_name} ], "multi": true};
+                            //await exams_table.updateOne(exam_to_update_query, update_document_query);
+                            await exams_table.updateOne({}, update_document_query, array_filter);
                             res.send(config.get_status_message("exam_answered")); return;
                         }
                     }
@@ -286,6 +299,7 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                 }
             }
         } catch (err) {
+            console.log(err);
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
         }
