@@ -262,7 +262,7 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                         if ((exam_mark >= PASSING_MARK) || (exam_mark === NOT_CORRECTED_MARK)) {
                             res.send(config.get_status_message("exam_passed_or_waiting_correction")); return;
                         } else {
-                            console.log("LA NOTA ES: " + exam_mark);
+                            //console.log("LA NOTA ES: " + exam_mark);
                             //TODO: PROBAR ESTO UNA VEZ QUE SE DEJE CORREGIR EXAMENES
 
                             let exam_to_update_query = {_id: new ObjectId(req.body.course_id), exams: { "$elemMatch": {"exam_name": req.body.exam_name, 
@@ -273,7 +273,7 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                                                                   "exams.$[s].students_exams.$[e].professors_notes": []
                                                                 }};
                             let array_filter = {arrayFilters: [ {"e.student_email": req.body.student_email}, {"s.exam_name": req.body.exam_name} ], "multi": true};
-                            await exams_table.updateOne({}, update_document_query, array_filter);
+                            await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
                             res.send(config.get_status_message("exam_answered")); return;
                         }
                     }
@@ -306,24 +306,37 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                     let answered_exam_query = {_id: new ObjectId(req.body.course_id), 
                         "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
                         "students_exams": {"$elemMatch": {"student_email": req.body.student_email}}}}};
-                    //let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.status.$": 1 }});
                     let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.mark.$": 1 }});
                     if (answered_exam !== null) {
-                        let past_mark = answered_exam.exams[0].students_exams.mark;
+                        let past_mark = answered_exam.exams[0].students_exams[0].mark;
                         if (past_mark === NOT_CORRECTED_MARK) {
 
                             //TODO: AGREGAR CHEQUEO DE QUE SI EL EXAMEN ESTA APROBADO (req.body.mark) HAY QUE FIJARSE SI EL ALUMNO AL QUE SE CORRIGIO APROBO TODOS LOS EXAMENES,
                             //SI APROBO TODOS ENTONCES SE GUARDA EN SU PERFIL/OTRO LADO QUE APROBO EL CURSO
 
 
-                            let exam_to_update_query = {_id: new ObjectId(req.body.course_id), //"exams.exam_name": req.body.exam_name, 
-                                                        exams: { "$elemMatch": {"exam_name": req.body.exam_name, 
-                                                        "students_exams": { "$elemMatch": {"student_email": req.body.student_email}}}}
-                                                        };
-                            let update_document_query = {"$set": {"exams.$.students_exams.$.mark": <Number>req.body.mark, 
-                                                                "exams.$.students_exams.$.professors_notes": req.body.corrections
-                                                        }};
-                            await exams_table.updateOne(exam_to_update_query, update_document_query);
+                            // let exam_to_update_query = {_id: new ObjectId(req.body.course_id), //"exams.exam_name": req.body.exam_name, 
+                            //                             exams: { "$elemMatch": {"exam_name": req.body.exam_name, 
+                            //                             "students_exams": { "$elemMatch": {"student_email": req.body.student_email}}}}
+                            //                             };
+                            // let update_document_query = {"$set": {"exams.$.students_exams.$.mark": <Number>req.body.mark, 
+                            //                                     "exams.$.students_exams.$.professors_notes": req.body.corrections
+                            //                             }};
+
+
+                            // let exam_to_update_query = {_id: new ObjectId(req.body.course_id), exams: { "$elemMatch": {"exam_name": req.body.exam_name, 
+                            //                             "students_exams": { "$elemMatch": {"student_email": req.body.student_email}}}}};
+
+
+                            //TODO: ADAPTAR ESTO A ACTUALIZAR UNA ENTRADA DE CORRECCION DE EXAMEN
+                            let update_document_query = {"$set": {
+                                                                  "exams.$[s].students_exams.$[e].mark": NOT_CORRECTED_MARK,
+                                                                  "exams.$[s].students_exams.$[e].answers": req.body.answers,
+                                                                  "exams.$[s].students_exams.$[e].professors_notes": []
+                                                                }};
+                            let array_filter = {arrayFilters: [ {"e.student_email": req.body.student_email}, {"s.exam_name": req.body.exam_name} ], "multi": true};
+
+                            await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
                             //await exams_table.updateOne(exam_to_update_query, update_document_query);
                             res.send(config.get_status_message("exam_graded")); return;
                         } else {
