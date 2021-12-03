@@ -313,21 +313,24 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                                                                   {projection: { 
                                                                       _id: 1, 
                                                                       "exams": {
-                                                                          "exam_name": req.body.exam_name,
                                                                           "$map": {
-                                                                            "input": "students_exams",
+                                                                            "input": "$exams",
                                                                             "in": { 
-                                                                                "student_email": req.body.student_email,
+                                                                                "$this.exam_name": req.body.exam_name,
+
+                                                                                "students_exams": {
                                                                                 "$map": {
-                                                                                    "input": ""
-                                                                                },
+                                                                                    "input": "$$this.students_exams",
+                                                                                    "in": { "student_email": req.body.student_email },
+                                                                                }},
                                                                             },
                                                                           }}
                                                                        } 
-                                                                    }});
+                                                                    });
                     
                     
-                    console.log(answered_exam.exams[0].students_exams);
+                    //console.log(answered_exam.exams[0].students_exams);
+                    console.log(answered_exam.exams);
 
 
                     if (answered_exam !== null) {
