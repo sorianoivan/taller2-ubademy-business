@@ -308,7 +308,28 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                     let answered_exam_query = {_id: new ObjectId(req.body.course_id), 
                         "exams": { "$elemMatch": {"exam_name": req.body.exam_name, 
                         "students_exams": {"$elemMatch": {"student_email": req.body.student_email}}}}};
-                    let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.mark.$": 1 }});
+                    //let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.mark.$": 1 }});
+                    let answered_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, 
+                                                                  {projection: { 
+                                                                      _id: 1, 
+                                                                      "exams": {
+                                                                          "exam_name": req.body.exam_name,
+                                                                          "$map": {
+                                                                            "input": "students_exams",
+                                                                            "in": { 
+                                                                                "student_email": req.body.student_email,
+                                                                                "$map": {
+                                                                                    "input": ""
+                                                                                },
+                                                                            },
+                                                                          }}
+                                                                       } 
+                                                                    }});
+                    
+                    
+                    console.log(answered_exam.exams[0].students_exams);
+
+
                     if (answered_exam !== null) {
                         let past_mark = answered_exam.exams[0].students_exams[0].mark;
                         if (past_mark === NOT_CORRECTED_MARK) {
