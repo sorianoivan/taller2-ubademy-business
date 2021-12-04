@@ -83,12 +83,11 @@ router.post("/update", async (req: Request, res: Response) => {
     }
 });
 
-//Estas funciones son para q el endpoint de modify_subscription no sea de 100 lineas pero nose si van aca o en otro archivo
-
-const update_user_subscription = async (email:string, new_subscription:string, res:Response) => {
+router.use(body_parser.json());
+router.post("/upgrade_subscription", async (req: Request, res: Response) => {
     try {
-        const query = { "email": email };
-        const update = { "$set": {subscription_type:new_subscription} };//Ver si esto esta bien
+        const query = { "email": req.body.email };
+        const update = { "$set": {subscription_type:req.body.new_subscription} };//Ver si esto esta bien
         const options = { "upsert": false };
 
         let { matchedCount, modifiedCount } = await profiles_table.updateOne(query, update, options);
@@ -99,73 +98,42 @@ const update_user_subscription = async (email:string, new_subscription:string, r
             res.send({"status":"ok", "message":"user subscription updated"});
         }
     } catch (e) {
-        let error = <Error>e;
-        console.log(error.name);
-        if (error.name === "InvalidConstructionParameters") {
-            res.send(config.get_status_message("invalid_body"));
-        } else {
-            let message = config.get_status_message("unexpected_error");
-            res.status(message["code"]).send(message);
-        }
+        console.log(e);
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
     }
-}
+});
 
-const modify_subscription = (result: Array<Document>, new_subscription: string, email:string, res:Response) => {
-    let user: any = (<Array<Document>>result)[0];
-    console.log("USER: ", user);
-    let old_sub = config.general_data["subscriptions"][user.subscription_type]["price"]
+const modify_subscription = (user_profile: any, new_subscription: string, res:Response) => {
+    let old_sub = config.general_data["subscriptions"][user_profile.subscription_type]["price"]
+    if (!(new_subscription in config.general_data["subscriptions"])) {
+        res.send({"status":"error", "message":"Invalid subscription"});//Me mandaron una sub que no existe
+        return;
+    }
     let new_sub = config.general_data["subscriptions"][new_subscription]["price"]
     let amount_to_pay = new_sub - old_sub;
     if (amount_to_pay <= 0) {
         res.send({"status":"error", "message":"cannot downgrade subscription"});
         return;
     }
-    axios.post(PAYMENTS_BACKEND_URL + "/deposit", {
-        email: email,
-        amountInEthers: amount_to_pay.toString(),
-    })
-    .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
-        console.log(response.data);
-        console.log(response.status);
-        if (response.data["status"] === "ok" && response.data["message"] === "Successful transaction") {//Chequeo las dos cosas por las dudas pero no es neecsario
-            update_user_subscription(email, new_subscription, res);
-        } else {
-            res.send({"status":"error", "message":response.data["message"]})
-        }
-    })
-    .catch((error:any) => {
-        console.log(error);
-        res.send( {"status":"error", "message":error});
-    });
+    res.send({"status":"ok", "message":"valid subscription modification", "amount_to_pay":amount_to_pay});//Ver si aca tengo que tener en cuenta
+                                                                                                       //el tema del gas/gaslimit
 }
 
 router.use(body_parser.json());
 router.post("/modify_subscription", async (req: Request, res: Response) => {
     try {
-       //buscar al usuario en profiles table
-        profiles_table.find({"email": req.body.email}).toArray(function(err: any, result: any) {
-            if (err) {
-                let message = config.get_status_message("unexpected_error");
-                res.status(message["code"]).send(message);
-            } else if (result === undefined) {
-                let message = config.get_status_message("non_existent_user");
-                res.status(message["code"]).send(message);
-            } else if (result.length !== 1) {//Si length da 0 entra aca
-                let message = config.get_status_message("duplicated_profile");
-                res.status(message["code"]).send(message);
-            } else {
-                modify_subscription(result, req.body.new_subscription, req.body.email, res);
-            }
-        });
-    } catch (e) {
-        let error = <Error>e;
-        console.log(error.name);
-        if (error.name === "InvalidConstructionParameters") {
-            res.send(config.get_status_message("invalid_body"));
-        } else {
-            let message = config.get_status_message("unexpected_error");
-            res.status(message["code"]).send(message);
+        const user_profile = await profiles_table.findOne({"email": req.body.email});
+        if (user_profile == null) {
+            res.send(config.get_status_message("non_existent_user"));
+            return;
         }
+        console.log("USUARIO: ", user_profile);//To debug
+        modify_subscription(user_profile, req.body.new_subscription, res);
+    } catch (e) {//Catchear err
+        console.log(e);
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
     }
 });
 
