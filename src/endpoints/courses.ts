@@ -232,5 +232,40 @@ router.post("/publish_exam", async (req: Request, res: Response) => {
     }
 });
 
+router.get("/:id/students", async (req: Request, res:Response) => {
+    let id = req.params.id;
+    const Id = schema(String);
+    if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
+        res.send(config.get_status_message("invalid_course_id"));
+        return;
+    }
+    const course = await courses_table.findOne({_id: new ObjectId(id)})
+    if (!course) {
+        res.send(config.get_status_message("inexistent_course"));
+        return;
+    }
+    res.send({
+       "status": "ok",
+       "students": course.students
+    });
+});
+
+router.get("/:id/exams", async (req: Request, res:Response) => {
+    let id = req.params.id;
+    const Id = schema(String);
+    if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
+        res.send(config.get_status_message("invalid_course_id"));
+        return;
+    }
+    const exams = await exams_table.findOne({_id: new ObjectId(id)})
+    if (!exams) {
+        res.send(config.get_status_message("non_existent_exam"));
+        return;
+    }
+    res.send({
+       "status": "ok",
+       "exams": exams
+    });
+});
 
 module.exports = router;
