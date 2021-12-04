@@ -251,10 +251,10 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                             {"_id": 0,
                               "questions": "$exams.questions"}}]).toArray();
 
-            if (existing_exam === null) {
+            if (existing_exam.length === 0) {
                 res.send(config.get_status_message("non_existent_exam")); return;
-            } else {
-                let questions = existing_exam.exams[0].questions;
+            } else if (existing_exam.length === 1) {
+                let questions = existing_exam[0].questions;
                 if (questions.length === req.body.answers.length) {
                     let answered_exam_query = {_id: new ObjectId(req.body.course_id),
                         "exams": { "$elemMatch": {"exam_name": req.body.exam_name,
@@ -316,6 +316,9 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                 } else {
                     res.send(config.get_status_message("wrong_answers_amount")); return;
                 }
+            } else {
+                let message = config.get_status_message("duplicated_exam_name");
+                res.status(message["code"]).send(message);
             }
         } catch (err) {
             console.log(err);
