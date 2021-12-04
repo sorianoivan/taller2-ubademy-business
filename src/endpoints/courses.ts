@@ -261,7 +261,6 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                         "students_exams": {"$elemMatch": {"student_email": req.body.student_email}}}}};
 
                     //TODO: VER SI PUEDO VOLAR ESTA QUERY, DEBERIA PODER PEDIR TODO SOLO CON LA DE ARRIBA   
-                    //let answered_exam = await exams_table.findOne(answered_exam_query, {projection: { _id: 1, "exams.students_exams.mark.$": 1 }});
                     let answered_exam = await exams_table.aggregate(
                         [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
                           {"$unwind": {"path": "$exams"}},
@@ -277,9 +276,6 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
 
                     if (answered_exam.length === 0) {
                         let student_exam = new CompletedExam(req.body.student_email, req.body.answers, [], NOT_CORRECTED_MARK);
-                        // let exam_to_update_query = {_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name};
-                        // let update_document_query = {"$push": {"exams.$.students_exams": student_exam}};
-
                         let exam_to_update_query = {_id: new ObjectId(req.body.course_id)};
                         let update_document_query = {"$push": {
                                                                 "exams.$[s].students_exams": student_exam,
@@ -290,15 +286,10 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                         await exams_table.updateOne(exam_to_update_query, update_document_query, array_filter);
                         res.send(config.get_status_message("exam_answered")); return;
                     } else if (answered_exam.length === 1) {
-                        let exam_mark = answered_exam.exams[0].mark;
+                        let exam_mark = answered_exam[0].mark;
                         if ((exam_mark >= PASSING_MARK) || (exam_mark === NOT_CORRECTED_MARK)) {
                             res.send(config.get_status_message("exam_passed_or_waiting_correction")); return;
                         } else {
-                            //console.log("LA NOTA ES: " + exam_mark);
-                            //TODO: PROBAR ESTO UNA VEZ QUE SE DEJE CORREGIR EXAMENES
-
-                            // let exam_to_update_query = {_id: new ObjectId(req.body.course_id), exams: { "$elemMatch": {"exam_name": req.body.exam_name, 
-                            //                             "students_exams": { "$elemMatch": {"student_email": req.body.student_email}}}}};
                             let exam_to_update_query = {_id: new ObjectId(req.body.course_id)};
                             let update_document_query = {"$set": {
                                                                   "exams.$[s].students_exams.$[e].mark": NOT_CORRECTED_MARK,
@@ -361,21 +352,6 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                             //TODO: AGREGAR CHEQUEO DE QUE SI EL EXAMEN ESTA APROBADO (req.body.mark) HAY QUE FIJARSE SI EL ALUMNO AL QUE SE CORRIGIO APROBO TODOS LOS EXAMENES,
                             //SI APROBO TODOS ENTONCES SE GUARDA EN SU PERFIL/OTRO LADO QUE APROBO EL CURSO
 
-
-                            // let exam_to_update_query = {_id: new ObjectId(req.body.course_id), //"exams.exam_name": req.body.exam_name, 
-                            //                             exams: { "$elemMatch": {"exam_name": req.body.exam_name, 
-                            //                             "students_exams": { "$elemMatch": {"student_email": req.body.student_email}}}}
-                            //                             };
-                            // let update_document_query = {"$set": {"exams.$.students_exams.$.mark": <Number>req.body.mark, 
-                            //                                     "exams.$.students_exams.$.professors_notes": req.body.corrections
-                            //                             }};
-
-
-                            // let exam_to_update_query = {_id: new ObjectId(req.body.course_id), exams: { "$elemMatch": {"exam_name": req.body.exam_name, 
-                            //                             "students_exams": { "$elemMatch": {"student_email": req.body.student_email}}}}};
-
-
-                            //TODO: ADAPTAR ESTO A ACTUALIZAR UNA ENTRADA DE CORRECCION DE EXAMEN
                             let update_document_query = {"$set": {
                                                                   "exams.$[s].students_exams.$[e].mark": <Number>req.body.mark,
                                                                   "exams.$[s].students_exams.$[e].professors_notes": req.body.corrections,
@@ -383,7 +359,6 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                             let array_filter = {arrayFilters: [ {"e.student_email": req.body.student_email}, {"s.exam_name": req.body.exam_name} ], "multi": true};
 
                             await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
-                            //await exams_table.updateOne(exam_to_update_query, update_document_query);
                             res.send(config.get_status_message("exam_graded")); return;
 
 
@@ -391,7 +366,7 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                             res.send(config.get_status_message("exam_already_graded")); return;
                         }
 
-                    } else if (answered_exam.lenth === 0) {
+                    } else if (answered_exam.length === 0) {
                             res.send(config.get_status_message("exam_not_completed")); return;
                     } else {
                         let message = config.get_status_message("duplicated_exam_completion");
