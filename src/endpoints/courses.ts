@@ -223,7 +223,11 @@ router.post("/publish_exam", async (req: Request, res: Response) => {
                 res.send(config.get_status_message("non_existent_exam"));
                 return;
             } else {
-                await exams_table.updateOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {"$set": {"exams.$.is_published": true}});
+                let update_document_query = {"$set": {
+                    "exams.$[s].is_published": true,
+                  }};
+                let array_filter = {arrayFilters: [ {"s.exam_name": req.body.exam_name} ], "multi": true};
+                await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
                 res.send(config.get_status_message("exam_published"));
             }
         } catch (err) {
@@ -240,9 +244,6 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
         try {
             // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE COMPLETA EL EXAMEN ES ALUMNO DEL CURSO
             
-            // let find_filter = {_id: new ObjectId(req.body.course_id), "exams": { "$elemMatch": {"exam_name": req.body.exam_name}}};
-            // let existing_exam = await exams_table.findOne(find_filter, {projection: { _id: 1, "exams.questions.$": 1 }});
-
             let existing_exam = await exams_table.aggregate(
                         [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
                           {"$unwind": {"path": "$exams"}},
@@ -281,8 +282,6 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                                                                 "exams.$[s].students_exams": student_exam,
                                                             }};
                         let array_filter = {arrayFilters: [{"s.exam_name": req.body.exam_name} ], "multi": true};
-
-                        //await exams_table.updateOne(exam_to_update_query, update_document_query);
                         await exams_table.updateOne(exam_to_update_query, update_document_query, array_filter);
                         res.send(config.get_status_message("exam_answered")); return;
                     } else if (answered_exam.length === 1) {
@@ -360,8 +359,6 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
 
                             await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
                             res.send(config.get_status_message("exam_graded")); return;
-
-
                         } else {
                             res.send(config.get_status_message("exam_already_graded")); return;
                         }
