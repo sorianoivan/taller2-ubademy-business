@@ -257,15 +257,21 @@ router.get("/:id/exams", async (req: Request, res:Response) => {
         res.send(config.get_status_message("invalid_course_id"));
         return;
     }
-    const exams = await exams_table.findOne({_id: new ObjectId(id)})
-    if (!exams) {
-        res.send(config.get_status_message("non_existent_exam"));
-        return;
+    try {
+        let exams = await exams_table.aggregate(
+            [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
+            {"$unwind": {"path": "$exams"}},
+            {"$project": {"_id": 0, "exam_names": "$exams.exam_name"}}]).toArray();
+        let exam_names: string[] = [];
+        exams.forEach((element:any) => {
+            exam_names.push(element.exam_names);
+        });
+        res.send({...config.get_status_message("got_exams_names"), "exams": exam_names});
+    } catch (err) {
+        console.log(err);
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
     }
-    res.send({
-       "status": "ok",
-       "exams": exams
-    });
 });
 
 module.exports = router;
