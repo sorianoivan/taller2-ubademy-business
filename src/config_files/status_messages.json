@@ -30,6 +30,7 @@
 "exam_not_completed": {"status": "error", "message": "exam not completed"},
 "correction_not_completed": {"status": "error", "message": "correction not completed"},
 "exam_graded": {"status": "ok", "message": "exam graded"},
+"exam_already_published": {"status": "error", "message": "exam already published"},
 "duplicated_exam_completion": {"status": "error", "message": "completed exam duplicated", "code": 414},
 "duplicated_exam_name": {"status": "error", "message": "exam name duplicated", "code": 415},
 "exam_already_graded": {"status": "ok", "message": "exam already graded"}
