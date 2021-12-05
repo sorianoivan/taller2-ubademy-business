@@ -8,8 +8,6 @@ COPY package-lock.json /app/
 COPY package* /app/
 COPY tsconfig.json /app/
 COPY newrelic.js /app/
-COPY src /app/src
-COPY test /app/test
 
 RUN pwd
 RUN ls
@@ -17,6 +15,10 @@ RUN ls
 
 RUN npm install --only=dev
 RUN npm i -g
+
+COPY src /app/src
+COPY test /app/test
+
 
 EXPOSE 8002
 
