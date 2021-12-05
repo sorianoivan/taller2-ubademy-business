@@ -261,8 +261,7 @@ router.post("/edit_exam", async (req: Request, res: Response) => {
                 res.send(config.get_status_message("non_existent_exam"));
                 return;
             } else {
-                console.log(existing_exam);
-                if (existing_exam[0].is_published !== true) {
+                if (!existing_exam[0].is_published) {
                     let update_document_query = {"$set": {
                         "exams.$[s].questions": req.body.questions,
                       }};
