@@ -26,6 +26,7 @@
 "wrong_answers_amount": {"status": "error", "message": "questions answers mismatch"},
 "wrong_corractions_amount": {"status": "error", "message": "corrections answers mismatch"},
 "exam_answered": {"status": "ok", "message": "exam answered"},
+"exam_edited": {"status": "ok", "message": "exam edited"},
 "exam_passed_or_waiting_correction": {"status": "error", "message": "exam passed or awaiting correction"},
 "exam_not_completed": {"status": "error", "message": "exam not completed"},
 "correction_not_completed": {"status": "error", "message": "correction not completed"},
@@ -33,5 +34,5 @@
 "exam_already_published": {"status": "error", "message": "exam already published"},
 "duplicated_exam_completion": {"status": "error", "message": "completed exam duplicated", "code": 414},
 "duplicated_exam_name": {"status": "error", "message": "exam name duplicated", "code": 415},
-"exam_already_graded": {"status": "ok", "message": "exam already graded"}
+"exam_already_graded": {"status": "error", "message": "exam already graded"}
 }
