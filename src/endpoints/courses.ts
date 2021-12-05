@@ -218,8 +218,14 @@ router.post("/publish_exam", async (req: Request, res: Response) => {
         try {
             // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
 
-            let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { _id: 1 }});
-            if (existing_exam === null) {
+            //let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { _id: 1 }});
+            let existing_exam = await exams_table.aggregate([
+                {"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
+                {"$unwind": {"path": "$exams"}},
+                {"$match": {"$expr": {"$eq": ["$exams.exam_name", req.body.exam_name]}}},
+                {"$project": {"id": "$_id"}}
+            ]).toArray();
+            if (existing_exam.length === 0) {
                 res.send(config.get_status_message("non_existent_exam"));
                 return;
             } else {
@@ -239,6 +245,44 @@ router.post("/publish_exam", async (req: Request, res: Response) => {
     }
 });
 
+
+router.post("/edit_exam", async (req: Request, res: Response) => {
+    if (create_exam_schema(req.body)) {
+        try {
+            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE EDITA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
+
+            let existing_exam = await exams_table.aggregate([
+                {"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
+                {"$unwind": {"path": "$exams"}},
+                {"$match": {"$expr": {"$eq": ["$exams.exam_name", req.body.exam_name]}}},
+                {"$project": {"is_published": "$exams.is_published"}}
+            ]).toArray();
+            if (existing_exam.length === 0) {
+                res.send(config.get_status_message("non_existent_exam"));
+                return;
+            } else {
+                if (!existing_exam[0].is_published) {
+                    let update_document_query = {"$set": {
+                        "exams.$[s].questions": req.body.questions,
+                      }};
+                    let array_filter = {arrayFilters: [ {"s.exam_name": req.body.exam_name} ], "multi": true};
+                    await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
+                    res.send(config.get_status_message("exam_edited"));
+                } else {
+                    res.send(config.get_status_message("exam_already_published"));
+                }
+            }
+        } catch (err) {
+            console.log(err);
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
+
 router.post("/complete_exam", async (req: Request, res: Response) => {
     if (complete_exam_schema(req.body)) {
         try {
@@ -248,6 +292,7 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
                         [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
                           {"$unwind": {"path": "$exams"}},
                           {"$match": {"$expr": {"$eq": ["$exams.exam_name", req.body.exam_name]}}},
+                          {"$match": {"$expr": {"$eq": ["$exams.is_published", true]}}},
                           {"$project": 
                             {"_id": 0,
                               "questions": "$exams.questions"}}]).toArray();
