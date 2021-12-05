@@ -14,6 +14,7 @@ import { create_exam_schema } from "../lone_schemas/create_exam"
 import { publish_exam_schema } from "../lone_schemas/publish_exam"
 import { complete_exam_schema } from "../lone_schemas/complete_exam"
 import { grade_exam_schema } from "../lone_schemas/grade_exam"
+import { add_collaborator_schema } from "../lone_schemas/add_collaborator"
 import { business_db } from "../index"
 import { courses_table } from "../index"
 import { exams_table } from "../index"
@@ -37,6 +38,7 @@ const NOT_CORRECTED_MARK = -1;
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
+        req.body.collaborators = [];
         let course: Course = new Course(req.body);
         console.log(course);//To debug
         await courses_table.insertOne(course);
@@ -592,6 +594,66 @@ router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:R
         console.log(err);
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
+    }
+});
+
+
+router.post("/add_collaborator", async (req: Request, res: Response) => {
+    // if (add_collaborator_schema(req.body)) {
+    //     try {
+    //         // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE AGREGA AL COLABORADOR ES EL CREADOR DEL CURSO
+
+    //         //let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { _id: 1 }});
+    //         let existing_exam = await exams_table.aggregate([
+    //             {"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
+    //             {"$unwind": {"path": "$exams"}},
+    //             {"$match": {"$expr": {"$eq": ["$exams.exam_name", req.body.exam_name]}}},
+    //             {"$project": {"id": "$_id"}}
+    //         ]).toArray();
+    //         if (existing_exam.length === 0) {
+    //             res.send(config.get_status_message("non_existent_exam"));
+    //             return;
+    //         } else {
+    //             let update_document_query = {"$set": {
+    //                 "exams.$[s].is_published": true,
+    //               }};
+    //             let array_filter = {arrayFilters: [ {"s.exam_name": req.body.exam_name} ], "multi": true};
+    //             await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
+    //             res.send(config.get_status_message("exam_published"));
+    //         }
+    //     } catch (err) {
+    //         let message = config.get_status_message("unexpected_error");
+    //         res.status(message["code"]).send(message);
+    //     }
+    // } else {
+    //     res.send(config.get_status_message("invalid_body"));
+    // }
+
+    if (add_collaborator_schema(req.body)) {
+        try {
+            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE AGREGA AL COLABORADOR ES EL CREADOR DEL CURSO
+            
+            let existing_exam = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "_id": 1, "collaborators": 1 }});
+            if (existing_exam === null) {
+                res.send(config.get_status_message("non_existent_course"));
+                return;
+            } else {
+
+                //AGREGAR CHEQUEO DE QUE EL QUE HACE EL LLAMADO DEL ENDPOINT ES EL CREADOR DEL CURSO
+                //AGREGAR CHEQUEO DE QUE EL COLABORADOR QUE SE AGREGA ES UN USUARIO DE LA PLATAFORMA
+                //AGREGAR CHEQUEO DE QUE EL COLABORADOR NO SEA YA COLABORADOR DEL CURSO
+
+                //PARA HACER ESTO VOY A FETCHEAR EL ARRAY DE COLABORADORES, CHEQUEAR QUE EL COLABORADOR NO ESTE EN EL ARRAY, SI NO
+                //ESTA AGREGARLO, Y DESPUÉS SETEAR EL VALOR DE collaborators EN MONGO COMO ESTE NUEVO ARRAY CON UN UPDATE
+
+                res.send(config.get_status_message("exam_published"));
+            }
+        } catch (err) {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
     }
 });
 

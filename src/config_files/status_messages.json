@@ -11,6 +11,7 @@
 "course_created": {"status": "ok", "message": "course succesfully created"},
 "course_updated": {"status": "ok", "message": "course succesfully updated"},
 "course_found": {"status": "ok", "message": "course found"},
+"non_existent_course": {"status": "course", "message": "course not found"},
 "duplicate_course": {"status": "error", "message": "failed_insert_course"},
 "inexistent_course": {"status": "error", "message": "course_not_found"},
 "invalid_course_id": {"status": "error", "message": "invalid_course_id"},
