@@ -12,16 +12,27 @@ const mongo = require("mongodb")
 import { get_profile_schema } from "../lone_schemas/get_profile"
 import { create_exam_schema } from "../lone_schemas/create_exam"
 import { publish_exam_schema } from "../lone_schemas/publish_exam"
+import { complete_exam_schema } from "../lone_schemas/complete_exam"
+import { grade_exam_schema } from "../lone_schemas/grade_exam"
 import { business_db } from "../index"
 import { courses_table } from "../index"
 import { exams_table } from "../index"
 import { Exam } from "../models/exam"
+import { CompletedExam } from "../models/completed_exam";
+
+
+
 
 let router = express.Router();
 
 const MONGO_SHORT_ID_LEN = 12;
 const MONGO_LONG_ID_LEN = 24;
 
+// const NOT_CORRECTED_STATUS = "Not corrected";
+// const FAILED_STATUS = "Failed";
+// const PASSED_CORRECTED_STATUS = "Passed";
+const PASSING_MARK = 4;
+const NOT_CORRECTED_MARK = -1;
 
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
@@ -205,25 +216,165 @@ router.post("/create_exam", async (req: Request, res: Response) => {
 router.post("/publish_exam", async (req: Request, res: Response) => {
     if (publish_exam_schema(req.body)) {
         try {
-            //let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "total_exams": 1 }});
-            let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
-
             // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
 
-            if (exams_doc === undefined) {
-                let message = config.get_status_message("no_exam_doc_for_course");
-                res.status(message["code"]).send(message);
+            let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { _id: 1 }});
+            if (existing_exam === null) {
+                res.send(config.get_status_message("non_existent_exam"));
+                return;
             } else {
-                let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { exams: 1 }});
-                if (existing_exam === null) {
-                    res.send(config.get_status_message("non_existent_exam"));
-                    return;
+                let update_document_query = {"$set": {
+                    "exams.$[s].is_published": true,
+                  }};
+                let array_filter = {arrayFilters: [ {"s.exam_name": req.body.exam_name} ], "multi": true};
+                await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
+                res.send(config.get_status_message("exam_published"));
+            }
+        } catch (err) {
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
+router.post("/complete_exam", async (req: Request, res: Response) => {
+    if (complete_exam_schema(req.body)) {
+        try {
+            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE COMPLETA EL EXAMEN ES ALUMNO DEL CURSO
+            
+            let existing_exam = await exams_table.aggregate(
+                        [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
+                          {"$unwind": {"path": "$exams"}},
+                          {"$match": {"$expr": {"$eq": ["$exams.exam_name", req.body.exam_name]}}},
+                          {"$project": 
+                            {"_id": 0,
+                              "questions": "$exams.questions"}}]).toArray();
+
+            if (existing_exam.length === 0) {
+                res.send(config.get_status_message("non_existent_exam")); return;
+            } else if (existing_exam.length === 1) {
+                let questions = existing_exam[0].questions;
+                if (questions.length === req.body.answers.length) {
+                    let answered_exam_query = {_id: new ObjectId(req.body.course_id),
+                        "exams": { "$elemMatch": {"exam_name": req.body.exam_name,
+                        "students_exams": {"$elemMatch": {"student_email": req.body.student_email}}}}};
+
+                    //TODO: VER SI PUEDO VOLAR ESTA QUERY, DEBERIA PODER PEDIR TODO SOLO CON LA DE ARRIBA   
+                    let answered_exam = await exams_table.aggregate(
+                        [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
+                          {"$unwind": {"path": "$exams"}},
+                          {"$match": {"$expr": {"$eq": ["$exams.exam_name", req.body.exam_name]}}},
+                          {"$unwind": {"path": "$exams.students_exams"}},
+                          {"$match": 
+                            {"$expr": {"$eq": ["$exams.students_exams.student_email", req.body.student_email]}}},
+                          {"$project": 
+                            {"_id": 0,
+                              "mark": "$exams.students_exams.mark"}}]).toArray();
+
+
+
+                    if (answered_exam.length === 0) {
+                        let student_exam = new CompletedExam(req.body.student_email, req.body.answers, [], NOT_CORRECTED_MARK);
+                        let exam_to_update_query = {_id: new ObjectId(req.body.course_id)};
+                        let update_document_query = {"$push": {
+                                                                "exams.$[s].students_exams": student_exam,
+                                                            }};
+                        let array_filter = {arrayFilters: [{"s.exam_name": req.body.exam_name} ], "multi": true};
+                        await exams_table.updateOne(exam_to_update_query, update_document_query, array_filter);
+                        res.send(config.get_status_message("exam_answered")); return;
+                    } else if (answered_exam.length === 1) {
+                        let exam_mark = answered_exam[0].mark;
+                        if ((exam_mark >= PASSING_MARK) || (exam_mark === NOT_CORRECTED_MARK)) {
+                            res.send(config.get_status_message("exam_passed_or_waiting_correction")); return;
+                        } else {
+                            let exam_to_update_query = {_id: new ObjectId(req.body.course_id)};
+                            let update_document_query = {"$set": {
+                                                                  "exams.$[s].students_exams.$[e].mark": NOT_CORRECTED_MARK,
+                                                                  "exams.$[s].students_exams.$[e].answers": req.body.answers,
+                                                                  "exams.$[s].students_exams.$[e].professors_notes": []
+                                                                }};
+                            let array_filter = {arrayFilters: [ {"e.student_email": req.body.student_email}, {"s.exam_name": req.body.exam_name} ], "multi": true};
+                            await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
+                            res.send(config.get_status_message("exam_answered")); return;
+                        }
+                    } else {
+                        let message = config.get_status_message("duplicated_exam_completion");
+                        res.status(message["code"]).send(message); return;
+                    }
                 } else {
-                    await exams_table.updateOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {"$set": {"exams.$.is_published": true}});
-                    res.send(config.get_status_message("exam_published"));
+                    res.send(config.get_status_message("wrong_answers_amount")); return;
+                }
+            } else {
+                let message = config.get_status_message("duplicated_exam_name");
+                res.status(message["code"]).send(message);
+            }
+        } catch (err) {
+            console.log(err);
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
+router.post("/grade_exam", async (req: Request, res: Response) => {
+    if (grade_exam_schema(req.body)) {
+        try {
+            // TODO: VER QUE EL QUE CORRIGE EL EXAMEN SEA DOCENTE O COLABORADOR DEL CURSO            
+ 
+            let find_filter = {_id: new ObjectId(req.body.course_id), "exams": { "$elemMatch": {"exam_name": req.body.exam_name}}};
+            let existing_exam = await exams_table.findOne(find_filter, {projection: { _id: 1, "exams.questions.$": 1 }});
+            if (existing_exam === null) {
+                res.send(config.get_status_message("non_existent_exam")); return;
+            } else {
+                let questions = existing_exam.exams[0].questions;
+                if (questions.length === req.body.corrections.length) {
+                    let answered_exam = await exams_table.aggregate(
+                        [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
+                          {"$unwind": {"path": "$exams"}},
+                          {"$match": {"$expr": {"$eq": ["$exams.exam_name", req.body.exam_name]}}},
+                          {"$unwind": {"path": "$exams.students_exams"}},
+                          {"$match": 
+                            {"$expr": {"$eq": ["$exams.students_exams.student_email", req.body.student_email]}}},
+                          {"$project": 
+                            {"_id": 0,
+                              "professors_notes": "$exams.students_exams.professor_notes",
+                              "mark": "$exams.students_exams.mark"}}]).toArray();
+                    
+                    if (answered_exam.length === 1) {
+                        let past_mark = answered_exam[0].mark;
+                        if (past_mark === NOT_CORRECTED_MARK) {
+
+                            //TODO: AGREGAR CHEQUEO DE QUE SI EL EXAMEN ESTA APROBADO (req.body.mark) HAY QUE FIJARSE SI EL ALUMNO AL QUE SE CORRIGIO APROBO TODOS LOS EXAMENES,
+                            //SI APROBO TODOS ENTONCES SE GUARDA EN SU PERFIL/OTRO LADO QUE APROBO EL CURSO
+
+                            let update_document_query = {"$set": {
+                                                                  "exams.$[s].students_exams.$[e].mark": <Number>req.body.mark,
+                                                                  "exams.$[s].students_exams.$[e].professors_notes": req.body.corrections,
+                                                                }};
+                            let array_filter = {arrayFilters: [ {"e.student_email": req.body.student_email}, {"s.exam_name": req.body.exam_name} ], "multi": true};
+
+                            await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
+                            res.send(config.get_status_message("exam_graded")); return;
+                        } else {
+                            res.send(config.get_status_message("exam_already_graded")); return;
+                        }
+
+                    } else if (answered_exam.length === 0) {
+                            res.send(config.get_status_message("exam_not_completed")); return;
+                    } else {
+                        let message = config.get_status_message("duplicated_exam_completion");
+                        res.status(message["code"]).send(message); return;
+                    }
+                } else {
+                    res.send(config.get_status_message("wrong_corractions_amount")); return;
                 }
             }
         } catch (err) {
+            console.log(err);
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
         }

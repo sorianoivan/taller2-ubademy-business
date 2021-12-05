@@ -24,5 +24,15 @@
 "non_existent_exam": {"status": "error", "message": "non existent exam"},
 "got_exams_names": {"status": "ok", "message": "got exams names"},
 "got_exam": {"status": "ok", "message": "got questions"},
-"exam_published": {"status": "ok", "message": "exam published"}
+"exam_published": {"status": "ok", "message": "exam published"},
+"wrong_answers_amount": {"status": "error", "message": "questions answers mismatch"},
+"wrong_corractions_amount": {"status": "error", "message": "corrections answers mismatch"},
+"exam_answered": {"status": "ok", "message": "exam answered"},
+"exam_passed_or_waiting_correction": {"status": "error", "message": "exam passed or awaiting correction"},
+"exam_not_completed": {"status": "error", "message": "exam not completed"},
+"correction_not_completed": {"status": "error", "message": "correction not completed"},
+"exam_graded": {"status": "ok", "message": "exam graded"},
+"duplicated_exam_completion": {"status": "error", "message": "completed exam duplicated", "code": 414},
+"duplicated_exam_name": {"status": "error", "message": "exam name duplicated", "code": 415},
+"exam_already_graded": {"status": "ok", "message": "exam already graded"}
 }
