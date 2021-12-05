@@ -274,6 +274,7 @@ router.get("/:id/exams", async (req: Request, res:Response) => {
     }
 });
 
+//filter: none, graded or not_graded
 router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Response) => {
     let id = req.params.id;
     const Id = schema(String); //TODO: SE PODRIA CAMBIAR ESTO A UN SCHEMA QUE CHEQUEE EL LARGO DEL STRING
@@ -283,10 +284,7 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
     }
 
     //TODO: AGREGAR CHEQUEO DE QUE EL MAIL ES DEL CREADOR O DE UN COLABORADOR
-    //TODO: AGREGAR LOS FILTROS
     //TODO: PROBAR BIEN QUE ESTO ANDE CUANDO SE MERGEE 
-
-    //TODO: AGREGAR SCHEMA Q CHEQUEE LO Q RECIBIMOS EN FILTER
 
     try {
         let exams;
@@ -342,5 +340,65 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
         res.status(message["code"]).send(message);
     }
 });
+
+
+//projection: questions or completed_exam
+router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:Response) => {
+    let id = req.params.id;
+    const Id = schema(String); //TODO: SE PODRIA CAMBIAR ESTO A UN SCHEMA QUE CHEQUEE EL LARGO DEL STRING
+    if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
+        res.send(config.get_status_message("invalid_course_id"));
+        return;
+    }
+
+    //TODO: AGREGAR CHEQUEO DE QUE EL MAIL ES DEL CREADOR O DE UN COLABORADOR, O DE ALGUIEN INSCRIPTO AL CURSO
+    //TODO: PROBAR BIEN QUE ESTO ANDE CUANDO SE MERGEE 
+
+    //TODO: AGREGAR SCHEMA Q CHEQUEE LO Q RECIBIMOS EN FILTER
+
+    try {
+        let query: any = [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
+                     {"$unwind": {"path": "$exams"}},
+                     {"$match": {"$expr": {"$eq":["$exams.exam_name", req.params.exam_name]}}}];
+        if (req.params.projection === "questions") {
+            query.push({"$project": {
+                "_id": 0, 
+                "questions": "$exams.questions",
+            }});
+        } else if (req.params.projection === "completed_exam") {
+            let rest_of_query = [
+                {"$unwind": {"path": "$exams.students_exams"}},
+                {"$match": {"$expr": {"$eq":["$exams.students_exams.student_email", req.params.email]}}},
+                {"$project": {
+                    "_id": 0, 
+                    "questions": "$exams.questions",
+                    "answers": "$exams.students_exams.answers",
+                    "corrections": "$exams.students_exams.professors_notes",
+                    "mark": "$exams.students_exams.mark"
+                }}
+            ];
+            query = query.concat(rest_of_query);
+        } else {
+            res.send(config.get_status_message("invalid_args"));
+            return;
+        }
+        let exam = await exams_table.aggregate(query).toArray();
+        if (exam.length === 0) {
+            res.send(config.get_status_message("non_existent_exam"));
+        } else {
+            if (exam[0].mark === -1) { //TODO: CAMBIAR POR LA CONSTANTE DE EXAMEN NO CORREGIDO
+                exam[0].mark = "Not graded";
+                exam[0].corrections = undefined;
+            }
+            res.send({...config.get_status_message("got_exam"), "exam": exam});
+        }
+    } catch (err) {
+        console.log(err);
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
+    }
+});
+
+
 
 module.exports = router;

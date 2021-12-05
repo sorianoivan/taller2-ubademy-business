@@ -23,5 +23,6 @@
 "exam_already_exists": {"status": "error", "message": "exam name in use"},
 "non_existent_exam": {"status": "error", "message": "non existent exam"},
 "got_exams_names": {"status": "ok", "message": "got exams names"},
+"got_exam": {"status": "ok", "message": "got questions"},
 "exam_published": {"status": "ok", "message": "exam published"}
 }
