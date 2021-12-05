@@ -2,12 +2,17 @@ FROM node:16
 
 WORKDIR /app
 
-
+#Los RUN true estan porque al parecer si un COPY no cambia nada el siguiente falla.
 COPY package.json /app/
+RUN true
 COPY package-lock.json /app/
+RUN true
 COPY package* /app/
+RUN true
 COPY tsconfig.json /app/
+RUN true
 COPY newrelic.js /app/
+RUN true
 
 RUN pwd
 RUN ls
@@ -17,6 +22,7 @@ RUN npm install --only=dev
 RUN npm i -g
 
 COPY src /app/src
+RUN true
 COPY test /app/test
 
 
