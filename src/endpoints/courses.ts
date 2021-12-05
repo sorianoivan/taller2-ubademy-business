@@ -310,11 +310,31 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
                 }
             });
         } else if (req.params.filter === "graded") {
-
-        } else (req.params.filter === "not_graded") {
-
+            exams = await exams_table.aggregate(
+                [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
+                {"$unwind": {"path": "$exams"}},
+                {"$unwind": {"path": "$exams.students_exams"}},
+                {"$match": {"$expr": {"$ne":["$exams.students_exams.mark", -1]}}}, //TODO: CAMBIAR POR LA CONSTANTE DE NOT CORRECTED CUANDO MERGEEMOS
+                {"$project": {
+                    "_id": 0, 
+                    "exam_name": "$exams.exam_name",
+                    "student_email": "$exams.students_exams.student_email",
+                }}]).toArray();
+        } else if (req.params.filter === "not_graded") {
+            exams = await exams_table.aggregate(
+                [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
+                {"$unwind": {"path": "$exams"}},
+                {"$unwind": {"path": "$exams.students_exams"}},
+                {"$match": {"$expr": {"$eq":["$exams.students_exams.mark", -1]}}}, //TODO: CAMBIAR POR LA CONSTANTE DE NOT CORRECTED CUANDO MERGEEMOS
+                {"$project": {
+                    "_id": 0, 
+                    "exam_name": "$exams.exam_name",
+                    "student_email": "$exams.students_exams.student_email",
+                }}]).toArray();
+        } else {
+            res.send(config.get_status_message("invalid_args"));
+            return;
         }
-
         res.send({...config.get_status_message("got_exams_names"), "exams": exams});
     } catch (err) {
         console.log(err);
