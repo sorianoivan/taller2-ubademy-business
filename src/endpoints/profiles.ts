@@ -83,40 +83,49 @@ router.post("/update", async (req: Request, res: Response) => {
     }
 });
 
-router.use(body_parser.json());
-router.post("/upgrade_subscription", async (req: Request, res: Response) => {
+//Funcion para modularizar
+const upgrade_subscription = async (email: string, new_subscription: string) => {
     try {
-        const query = { "email": req.body.email };
-        const update = { "$set": {subscription_type:req.body.new_subscription} };//Ver si esto esta bien
+        const query = { "email": email };
+        const update = { "$set": {subscription_type: new_subscription} };
         const options = { "upsert": false };
 
         let { matchedCount, modifiedCount } = await profiles_table.updateOne(query, update, options);
         if (matchedCount === 0) {        
             let message = config.get_status_message("non_existent_user");
-            res.status(message["code"]).send(message);
+            return message;
         } else {
-            res.send({"status":"ok", "message":"user subscription updated"});
+            return {"status":"ok", "message":"user subscription updated"};
         }
     } catch (e) {
         console.log(e);
         let message = config.get_status_message("unexpected_error");
-        res.status(message["code"]).send(message);
+        return message;
     }
+}
+
+router.use(body_parser.json());
+router.post("/upgrade_subscription", async (req: Request, res: Response) => {
+    let response:any = await upgrade_subscription(req.body.email, req.body.new_subscription);
+    if (response["status"] === "error") {
+        res.status(response["code"]).send(response);
+        return;
+    }
+    res.send(response);
 });
 
-const modify_subscription = (user_profile: any, new_subscription: string, res:Response) => {
+const modify_subscription = async (user_profile: any, new_subscription: string, res:Response) => {
     let old_sub = config.general_data["subscriptions"][user_profile.subscription_type]["price"]
     if (!(new_subscription in config.general_data["subscriptions"])) {
-        res.send({"status":"error", "message":"Invalid subscription"});//Me mandaron una sub que no existe
-        return;
+        return {"status":"error", "message":"Invalid subscription"};//Me mandaron una sub que no existe
     }
     let new_sub = config.general_data["subscriptions"][new_subscription]["price"]
     let amount_to_pay = new_sub - old_sub;
     if (amount_to_pay <= 0) {
-        res.send({"status":"error", "message":"cannot downgrade subscription"});
-        return;
+        let response = await upgrade_subscription(user_profile.email, new_subscription);
+        return response;
     }
-    res.send({"status":"ok", "message":"valid subscription modification", "amount_to_pay":amount_to_pay});//Ver si aca tengo que tener en cuenta
+    return {"status":"ok", "message":"confirm payment", "amount_to_pay":amount_to_pay.toString()};//Ver si aca tengo que tener en cuenta
                                                                                                        //el tema del gas/gaslimit
 }
 
@@ -129,7 +138,69 @@ router.post("/modify_subscription", async (req: Request, res: Response) => {
             return;
         }
         console.log("USUARIO: ", user_profile);//To debug
-        modify_subscription(user_profile, req.body.new_subscription, res);
+        let response: any = await modify_subscription(user_profile, req.body.new_subscription, res);
+        if (response["status"] === "error") {
+            console.log("ERROR RESPONSE: ", response);
+            if (response.hasOwnProperty("code")){
+                res.status(response["code"]).send(response);
+                return;
+            } else {
+                res.send(response);
+                return;
+            }
+        }
+        console.log("RESPONSE: ", response);
+        res.send(response);
+    } catch (e) {//Catchear err
+        console.log(e);
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
+    }
+});
+
+//La primera parte es igual a modify subscription, meterlo en una funcion.
+//Esa parte es igual xq en modify subscription lo uso para devolver cuanto tiene que pagar para mostrarlo en el front
+//Pero cuando el usuario elige pagar no puedo depender de que el front me mande la cantidad xq lo puede cambiar cualquiera
+//asi que solo recibo la nueva suscripcion y hago el calculo de cuanto hay que pagar para mandarselo a payment
+router.use(body_parser.json());
+router.post("/pay_subscription", async (req: Request, res: Response) => {
+    try {
+        const user_profile = await profiles_table.findOne({"email": req.body.email});
+        if (user_profile == null) {
+            res.send(config.get_status_message("non_existent_user"));
+            return;
+        }
+        console.log("USUARIO: ", user_profile);//To debug
+        let old_sub = config.general_data["subscriptions"][user_profile.subscription_type]["price"]
+        if (!(req.body.new_subscription in config.general_data["subscriptions"])) {
+            res.send({"status":"error", "message":"Invalid subscription"});//Me mandaron una sub que no existe
+            return;
+        }
+        let new_sub = config.general_data["subscriptions"][req.body.new_subscription]["price"]
+        let amount_to_pay = new_sub - old_sub;
+        if (amount_to_pay <= 0) {
+            res.send({"status":"error", "message":"Invalid Payment"});//NO deberia llegar una request para pagar una suscripcion menor
+            return;
+        }
+        
+        axios.post(PAYMENTS_BACKEND_URL + "/deposit", {
+            email: user_profile.email,
+            amountInEthers: amount_to_pay.toString(),
+            newSubscription: req.body.new_subscription
+        })
+        .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
+            console.log(response.data);
+            console.log(response.status);
+            if (response.data["status"] === "ok") {
+                res.send({"status":"ok", "message":"transaction is beign processed"})
+            } else {
+                res.send({"status":"error", "message":response.data["message"]})
+            }
+        })
+        .catch((error:any) => {
+            console.log(error);
+            res.send( {"status":"error", "message":error});
+        });
     } catch (e) {//Catchear err
         console.log(e);
         let message = config.get_status_message("unexpected_error");
