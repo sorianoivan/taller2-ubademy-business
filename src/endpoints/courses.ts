@@ -15,10 +15,7 @@ import { publish_exam_schema } from "../lone_schemas/publish_exam"
 import { complete_exam_schema } from "../lone_schemas/complete_exam"
 import { grade_exam_schema } from "../lone_schemas/grade_exam"
 import { add_collaborator_schema } from "../lone_schemas/add_collaborator"
-import { business_db } from "../index"
-import { courses_table } from "../index"
-import { exams_table } from "../index"
-import { profiles_table } from "../index"
+import { business_db, courses_table, exams_table, profiles_table } from "../index"
 import { Exam } from "../models/exam"
 import { CompletedExam } from "../models/completed_exam";
 
