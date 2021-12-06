@@ -619,7 +619,10 @@ router.post("/add_collaborator", async (req: Request, res: Response) => {
                 res.send(config.get_status_message("non_existent_collaborator"));
                 return;
             }
-
+            if (req.body.collaborator_email === existing_course.creator_email) {
+                res.send(config.get_status_message("collaborator_is_creator"));
+                return;
+            }
             if (existing_course.creator_email === req.body.user_email) {
                 if (!existing_course.collaborators.includes(req.body.collaborator_email)) {
                     existing_course.collaborators.push(req.body.collaborator_email);
