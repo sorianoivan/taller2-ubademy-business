@@ -37,6 +37,7 @@ export class Course {
     country: string;
     course_type: string;
     subscription_type: string;
+    collaborators: string[];
 
 
     constructor(course_data: any) {
@@ -53,6 +54,7 @@ export class Course {
         this.country = course_data.country;
         this.course_type = course_data.course_type;
         this.subscription_type = course_data.subscription_type;
+        this.collaborators = course_data.collaborators;
     }
 
     validate_course_data(course_data: any) {

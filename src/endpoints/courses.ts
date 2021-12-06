@@ -14,9 +14,8 @@ import { create_exam_schema } from "../lone_schemas/create_exam"
 import { publish_exam_schema } from "../lone_schemas/publish_exam"
 import { complete_exam_schema } from "../lone_schemas/complete_exam"
 import { grade_exam_schema } from "../lone_schemas/grade_exam"
-import { business_db } from "../index"
-import { courses_table } from "../index"
-import { exams_table } from "../index"
+import { add_collaborator_schema } from "../lone_schemas/add_collaborator"
+import { business_db, courses_table, exams_table, profiles_table } from "../index"
 import { Exam } from "../models/exam"
 import { CompletedExam } from "../models/completed_exam";
 
@@ -37,6 +36,7 @@ const NOT_CORRECTED_MARK = -1;
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
+        req.body.collaborators = [];
         let course: Course = new Course(req.body);
         console.log(course);//To debug
         await courses_table.insertOne(course);
@@ -592,6 +592,54 @@ router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:R
         console.log(err);
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
+    }
+});
+
+
+router.post("/add_collaborator", async (req: Request, res: Response) => {
+    if (add_collaborator_schema(req.body)) {
+        try {
+            let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
+                    {projection: { "_id": 1, 
+                    "collaborators": 1,
+                    "creator_email": 1,
+                 }});
+            let collaborator = await profiles_table.findOne({email: req.body.collaborator_email}, 
+                    {projection: { "_id": 1, 
+                    "collaborator_courses": 1,
+                 }});
+            if (existing_course === null) {
+                res.send(config.get_status_message("non_existent_course"));
+                return;
+            }
+            if (collaborator === null) {
+                res.send(config.get_status_message("non_existent_collaborator"));
+                return;
+            }
+            if (req.body.collaborator_email === existing_course.creator_email) {
+                res.send(config.get_status_message("collaborator_is_creator"));
+                return;
+            }
+            if (existing_course.creator_email === req.body.user_email) {
+                if (!existing_course.collaborators.includes(req.body.collaborator_email)) {
+                    existing_course.collaborators.push(req.body.collaborator_email);
+                }
+                if (!collaborator.collaborator_courses.includes(req.body.course_id)) {
+                    collaborator.collaborator_courses.push(req.body.course_id);
+                }
+                await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$set": {collaborators: existing_course.collaborators}});
+                await profiles_table.updateOne({email: req.body.collaborator_email}, {"$set": {collaborator_courses: collaborator.collaborator_courses}});
+                res.send(config.get_status_message("collaborator_added"));
+            } else {
+                res.send(config.get_status_message("non_existent_collaborator"));
+            }
+        } catch (err) {
+            console.log(err);
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
     }
 });
 

@@ -1,5 +1,6 @@
 {
 "non_existent_user": {"status": "error", "message": "non existent user", "code": 409},
+"non_existent_collaborator": {"status": "error", "message": "non existent collaborator"},
 "existent_user": {"status": "error", "message": "user already exists", "code": 410},
 "user_updated": {"status": "ok", "message": "user updated"},
 "unexpected_error": {"status": "error", "message": "error_unexpected", "code": 411},
@@ -11,6 +12,7 @@
 "course_created": {"status": "ok", "message": "course succesfully created"},
 "course_updated": {"status": "ok", "message": "course succesfully updated"},
 "course_found": {"status": "ok", "message": "course found"},
+"non_existent_course": {"status": "course", "message": "course not found"},
 "duplicate_course": {"status": "error", "message": "failed_insert_course"},
 "inexistent_course": {"status": "error", "message": "course_not_found"},
 "invalid_course_id": {"status": "error", "message": "invalid_course_id"},
@@ -36,5 +38,8 @@
 "exam_already_published": {"status": "error", "message": "exam already published"},
 "duplicated_exam_completion": {"status": "error", "message": "completed exam duplicated", "code": 414},
 "duplicated_exam_name": {"status": "error", "message": "exam name duplicated", "code": 415},
+"not_creator": {"status": "error", "message": "not the creator"},
+"collaborator_added": {"status": "ok", "message": "collaborator added"},
+"collaborator_is_creator": {"status": "ok", "message": "collaborator is creator"},
 "exam_already_graded": {"status": "error", "message": "exam already graded"}
 }

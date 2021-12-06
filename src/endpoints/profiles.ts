@@ -20,7 +20,7 @@ let router = express.Router();
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
-        const user_profile = new UserProfile("", "", req.body.email, "", "Free", []);
+        const user_profile = new UserProfile("", "", req.body.email, "", "Free", [], []);
         await profiles_table.insertOne(user_profile);
         res.send(config.get_status_message("profile_created"));
     } catch (e) {
@@ -41,7 +41,8 @@ router.use(body_parser.json());
 router.post("/update", async (req: Request, res: Response) => {
     try {
         const user_profile = new UserProfile(req.body.name, req.body.profile_picture, req.body.email, 
-                                            req.body.country, req.body.subscription_type, req.body.interesting_genres);
+                                            req.body.country, req.body.subscription_type, req.body.interesting_genres, []);
+        delete user_profile.collaborator_courses; //Hack to prevent collaborator courses reset
         const query = { "email": req.body.email };
         const update = { "$set": user_profile };
         const options = { "upsert": false };
