@@ -22,14 +22,17 @@ export class UserProfile {
     country: string;
     subscription_type: string;
     interesting_genres: string[];
+    collaborator_courses: string[] | undefined;
 
-    constructor(name: string, profile_picture: string, email: string, country: string, subscription_type: string, interesting_genres: string[]) {
+    constructor(name: string, profile_picture: string, email: string, country: string, 
+                subscription_type: string, interesting_genres: string[], collaborator_courses: string[]) {
         this.name = name;
         this.email = email;
         this.profile_picture_link = profile_picture;
         this.country = country;
         this.subscription_type = subscription_type;
         this.interesting_genres = interesting_genres;
+        this.collaborator_courses = collaborator_courses;
 
         if ((!profile_schema(this)) || (!((this.interesting_genres != undefined) && (this._are_valid_genres())))) {
             throw new InvalidConstructionParameters("Invalid create profile body format");

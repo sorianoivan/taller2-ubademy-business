@@ -18,6 +18,7 @@ import { add_collaborator_schema } from "../lone_schemas/add_collaborator"
 import { business_db } from "../index"
 import { courses_table } from "../index"
 import { exams_table } from "../index"
+import { profiles_table } from "../index"
 import { Exam } from "../models/exam"
 import { CompletedExam } from "../models/completed_exam";
 
@@ -633,22 +634,47 @@ router.post("/add_collaborator", async (req: Request, res: Response) => {
         try {
             // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE AGREGA AL COLABORADOR ES EL CREADOR DEL CURSO
             
-            let existing_exam = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "_id": 1, "collaborators": 1 }});
-            if (existing_exam === null) {
+            let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
+                    {projection: { "_id": 1, 
+                    "collaborators": 1,
+                    "creator_email": 1,
+                 }});
+            let collaborator = await profiles_table.findOne({email: req.body.collaborator_email}, 
+                    {projection: { "_id": 1, 
+                    "collaborator_courses": 1,
+                 }});
+            if (existing_course === null) {
                 res.send(config.get_status_message("non_existent_course"));
                 return;
+            }
+            if (collaborator === null) {
+                res.send(config.get_status_message("non_existent_collaborator"));
+                return;
+            }
+
+            //AGREGAR CHEQUEO DE QUE EL QUE HACE EL LLAMADO DEL ENDPOINT ES EL CREADOR DEL CURSO
+            //AGREGAR CHEQUEO DE QUE EL COLABORADOR QUE SE AGREGA ES UN USUARIO DE LA PLATAFORMA
+            //AGREGAR CHEQUEO DE QUE EL COLABORADOR NO SEA YA COLABORADOR DEL CURSO
+
+            //PARA HACER ESTO VOY A FETCHEAR EL ARRAY DE COLABORADORES, CHEQUEAR QUE EL COLABORADOR NO ESTE EN EL ARRAY, SI NO
+            //ESTA AGREGARLO, Y DESPUÉS SETEAR EL VALOR DE collaborators EN MONGO COMO ESTE NUEVO ARRAY CON UN UPDATE
+
+            if (existing_course.creator_email === req.body.user_email) {
+                if (!existing_course.collaborators.includes(req.body.collaborator_email)) {
+                    existing_course.collaborators.push(req.body.collaborator_email);
+                }
+                if (!collaborator.collaborator_courses.includes(req.body.course_id)) {
+                    collaborator.collaborator_courses.push(req.body.course_id);
+                }
+                await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$set": {collaborators: existing_course.collaborators}});
+                await profiles_table.updateOne({email: req.body.collaborator_email}, {"$set": {collaborator_courses: collaborator.collaborator_courses}});
+                res.send(config.get_status_message("collaborator_added"));
             } else {
 
-                //AGREGAR CHEQUEO DE QUE EL QUE HACE EL LLAMADO DEL ENDPOINT ES EL CREADOR DEL CURSO
-                //AGREGAR CHEQUEO DE QUE EL COLABORADOR QUE SE AGREGA ES UN USUARIO DE LA PLATAFORMA
-                //AGREGAR CHEQUEO DE QUE EL COLABORADOR NO SEA YA COLABORADOR DEL CURSO
-
-                //PARA HACER ESTO VOY A FETCHEAR EL ARRAY DE COLABORADORES, CHEQUEAR QUE EL COLABORADOR NO ESTE EN EL ARRAY, SI NO
-                //ESTA AGREGARLO, Y DESPUÉS SETEAR EL VALOR DE collaborators EN MONGO COMO ESTE NUEVO ARRAY CON UN UPDATE
-
-                res.send(config.get_status_message("exam_published"));
+                res.send(config.get_status_message("non_existent_collaborator"));
             }
         } catch (err) {
+            console.log(err);
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
         }
