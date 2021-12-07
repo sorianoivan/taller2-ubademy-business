@@ -37,6 +37,7 @@ router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
         req.body.collaborators = [];
+        req.body.students = [];
         let course: Course = new Course(req.body);
         console.log(course);//To debug
         await courses_table.insertOne(course);

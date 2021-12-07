@@ -137,12 +137,16 @@ router.post("/subscribe_to_course", async (req: Request, res: Response) => {
     if (subscribe_to_course_schema(req.body)) {
         try {
             let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
-                                    {projection: { "_id": 1, "creator_email": 1, "students": 1, "subscription_type": 1}});
+                                    {projection: { "_id": 1, "collaborators": 1, "creator_email": 1, "students": 1, "subscription_type": 1}});
             let user = await profiles_table.findOne({email: req.body.user_email}, 
                     {projection: { "_id": 1, 
                                    "subscribed_courses": 1,
                                    "subscription_type": 1,
                      }});
+
+
+            console.log(existing_course);
+
             if (existing_course === null) {
                 res.send(config.get_status_message("non_existent_course"));
                 return;
@@ -165,9 +169,9 @@ router.post("/subscribe_to_course", async (req: Request, res: Response) => {
                 }
                 await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$set": {students: existing_course.students}});
                 await profiles_table.updateOne({email: req.body.user_email}, {"$set": {subscribed_courses: user.subscribed_courses}});
-                res.send(config.get_status_message("collaborator_added"));
-            } else {
                 res.send(config.get_status_message("subscription_added"));
+            } else {
+                res.send(config.get_status_message("wrong_subscription"));
             }
         } catch (err) {
             console.log(err);
