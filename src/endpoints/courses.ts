@@ -14,6 +14,7 @@ import { create_exam_schema } from "../lone_schemas/create_exam"
 import { publish_exam_schema } from "../lone_schemas/publish_exam"
 import { complete_exam_schema } from "../lone_schemas/complete_exam"
 import { grade_exam_schema } from "../lone_schemas/grade_exam"
+import { list_students_schema } from "../lone_schemas/list_students"
 import { add_collaborator_schema } from "../lone_schemas/add_collaborator"
 import { business_db, courses_table, exams_table, profiles_table } from "../index"
 import { Exam } from "../models/exam"
@@ -632,6 +633,55 @@ router.post("/add_collaborator", async (req: Request, res: Response) => {
                 }
                 await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$set": {collaborators: existing_course.collaborators}});
                 await profiles_table.updateOne({email: req.body.collaborator_email}, {"$set": {collaborator_courses: collaborator.collaborator_courses}});
+                res.send(config.get_status_message("collaborator_added"));
+            } else {
+                res.send(config.get_status_message("not_the_creator"));
+            }
+        } catch (err) {
+            console.log(err);
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
+
+//Returns the emails of the students that completed the received course
+router.get("/:id/students/:user_email/:exam_name", async (req: Request, res: Response) => {
+    if (list_students_schema(req.body)) {
+        try {
+            let existing_course = await courses_table.findOne({_id: new ObjectId(req.params.id)}, 
+                    {projection: { "_id": 1, 
+                    "students": 1,
+                    "creator_email": 1,
+                 }});
+            if (existing_course === null) {
+                res.send(config.get_status_message("non_existent_course"));
+                return;
+            }
+            if (existing_course.creator_email === req.params.user_email) {
+
+                if (req.body.exam === "none") {
+                    res.send({...config.get_status_message("got_students_names"), "names": existing_course.students});
+                    return;
+                } else {
+                    let students = await exams_table.aggregate(
+                        [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(req.params.id)]}}},
+                        {"$unwind": {"path": "$exams"}},
+                        {"$match": {"$expr": {"$eq":["$exams.exam_name", req.params.exam_name]}}},
+                        {"$unwind": {"path": "$exams.students_exams"}},
+                        {"$project": {
+                            "_id": 0, 
+                            "student_email": "$exams.students_exams.student_email",
+                        }}]).toArray();
+                    if (students.length === 0) {
+                        res.send(config.get_status_message("exam_not_completed")); return;
+                    } else {
+                        res.send({...config.get_status_message("got_students_names"), "names": students[0].student_email});
+                    }
+                }
                 res.send(config.get_status_message("collaborator_added"));
             } else {
                 res.send(config.get_status_message("not_the_creator"));
