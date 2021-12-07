@@ -21,6 +21,7 @@ const url = process.env.MONGODB_URL;
 
 const MONGO_SHORT_ID_LEN = 12
 const MONGO_LONG_ID_LEN = 24
+const API_KEY = 'faf5b8b0651b9baf0919f77f5b50f9b872b3521f922c14c0ad12f696b50c1b73'
 //const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 
 export function connect_to_database() {
@@ -37,6 +38,16 @@ export function connect_to_database() {
 
 export function create_server(business_db: Db) {//Db is the type for a mongo database
   const app: Application = express();
+
+  app.use((req: Request, res: Response, next) => {
+    let auth_key = req.get('Authorization');
+    console.log(auth_key);
+    if(!auth_key || auth_key !== API_KEY) {
+        res.send(config.get_status_message("unauthorized_api_key"));
+        return;
+    }
+    next();
+  });
 
   app.get("/", (req: Request, res: Response) => {
     res.send("Hello world!");

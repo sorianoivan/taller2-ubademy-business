@@ -41,5 +41,6 @@
 "not_creator": {"status": "error", "message": "not the creator"},
 "collaborator_added": {"status": "ok", "message": "collaborator added"},
 "collaborator_is_creator": {"status": "ok", "message": "collaborator is creator"},
-"exam_already_graded": {"status": "error", "message": "exam already graded"}
+"exam_already_graded": {"status": "error", "message": "exam already graded"},
+"unauthorized_api_key": {"status": "error", "message": "unauthorized api key"}
 }
