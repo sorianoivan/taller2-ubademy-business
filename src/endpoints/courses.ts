@@ -135,6 +135,8 @@ router.get("/organized/:filter_type/:filter", async (req: Request, res: Response
 router.put("/update", async (req: Request, res: Response) => {
     try {
         let new_course: Course = new Course(req.body);
+        delete new_course.collaborators;
+        delete new_course.students;
         console.log(new_course);//To debug
 
         const Id = schema(String)

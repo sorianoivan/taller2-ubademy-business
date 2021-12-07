@@ -37,8 +37,8 @@ export class Course {
     country: string;
     course_type: string;
     subscription_type: string;
-    collaborators: string[];
-    students: string[];
+    collaborators: string[] | undefined;
+    students: string[] | undefined;
 
 
     constructor(course_data: any) {
