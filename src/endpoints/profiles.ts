@@ -84,7 +84,7 @@ router.post("/update", async (req: Request, res: Response) => {
 });
 
 //Funcion para modularizar
-const upgrade_subscription = async (email: string, new_subscription: string) => {
+const update_subscription = async (email: string, new_subscription: string) => {
     try {
         const query = { "email": email };
         const update = { "$set": {subscription_type: new_subscription} };
@@ -106,7 +106,7 @@ const upgrade_subscription = async (email: string, new_subscription: string) => 
 
 router.use(body_parser.json());
 router.post("/upgrade_subscription", async (req: Request, res: Response) => {
-    let response:any = await upgrade_subscription(req.body.email, req.body.new_subscription);
+    let response:any = await update_subscription(req.body.email, req.body.new_subscription);
     if (response["status"] === "error") {
         res.status(response["code"]).send(response);
         return;
@@ -122,11 +122,10 @@ const modify_subscription = async (user_profile: any, new_subscription: string, 
     let new_sub = config.general_data["subscriptions"][new_subscription]["price"]
     let amount_to_pay = new_sub - old_sub;
     if (amount_to_pay <= 0) {
-        let response = await upgrade_subscription(user_profile.email, new_subscription);
+        let response = await update_subscription(user_profile.email, new_subscription);
         return response;
     }
-    return {"status":"ok", "message":"confirm payment", "amount_to_pay":amount_to_pay.toString()};//Ver si aca tengo que tener en cuenta
-                                                                                                       //el tema del gas/gaslimit
+    return {"status":"ok", "message":"confirm payment", "amount_to_pay":amount_to_pay.toString()};
 }
 
 router.use(body_parser.json());
@@ -151,7 +150,7 @@ router.post("/modify_subscription", async (req: Request, res: Response) => {
         }
         console.log("RESPONSE: ", response);
         res.send(response);
-    } catch (e) {//Catchear err
+    } catch (e) {
         console.log(e);
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
@@ -201,7 +200,7 @@ router.post("/pay_subscription", async (req: Request, res: Response) => {
             console.log(error);
             res.send( {"status":"error", "message":error});
         });
-    } catch (e) {//Catchear err
+    } catch (e) {
         console.log(e);
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
