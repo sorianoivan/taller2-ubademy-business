@@ -143,10 +143,6 @@ router.post("/subscribe_to_course", async (req: Request, res: Response) => {
                                    "subscribed_courses": 1,
                                    "subscription_type": 1,
                      }});
-
-
-            console.log(existing_course);
-
             if (existing_course === null) {
                 res.send(config.get_status_message("non_existent_course"));
                 return;
@@ -173,6 +169,49 @@ router.post("/subscribe_to_course", async (req: Request, res: Response) => {
             } else {
                 res.send(config.get_status_message("wrong_subscription"));
             }
+        } catch (err) {
+            console.log(err);
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
+
+
+router.post("/unsubscribe_from_course", async (req: Request, res: Response) => {
+    if (subscribe_to_course_schema(req.body)) {
+        try {
+            let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
+                                    {projection: { "_id": 1, "collaborators": 1, "creator_email": 1, "students": 1, "subscription_type": 1}});
+            let user = await profiles_table.findOne({email: req.body.user_email}, 
+                    {projection: { "_id": 1, 
+                                   "subscribed_courses": 1,
+                                   "subscription_type": 1,
+                     }});
+            if (existing_course === null) {
+                res.send(config.get_status_message("non_existent_course"));
+                return;
+            }
+            if (user === null) {
+                let message = config.get_status_message("non_existent_user");
+                res.status(message["code"]).send(message);
+                return;
+            }
+            let student_index = existing_course.students.indexOf(req.body.user_email);
+            if (student_index > -1) {
+                existing_course.students.splice(student_index, 1);
+            }
+            let course_index = user.subscribed_courses.indexOf(req.body.course_id);
+            if (course_index > -1) {
+                user.subscribed_courses.splice(course_index, 1);
+            }
+            await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$set": {students: existing_course.students}});
+            await profiles_table.updateOne({email: req.body.user_email}, {"$set": {subscribed_courses: user.subscribed_courses}});
+            res.send(config.get_status_message("subscription_added"));
+
         } catch (err) {
             console.log(err);
             let message = config.get_status_message("unexpected_error");
