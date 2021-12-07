@@ -631,7 +631,7 @@ router.post("/add_collaborator", async (req: Request, res: Response) => {
                 await profiles_table.updateOne({email: req.body.collaborator_email}, {"$set": {collaborator_courses: collaborator.collaborator_courses}});
                 res.send(config.get_status_message("collaborator_added"));
             } else {
-                res.send(config.get_status_message("non_existent_collaborator"));
+                res.send(config.get_status_message("not_the_creator"));
             }
         } catch (err) {
             console.log(err);

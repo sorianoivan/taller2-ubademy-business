@@ -10,7 +10,8 @@ import e from "express";
 const body_parser = require('body-parser');
 const mongo = require("mongodb")
 import { get_profile_schema } from "../lone_schemas/get_profile"
-import { profiles_table } from "../index"
+import { subscribe_to_course_schema } from "../lone_schemas/subscribe_to_course"
+import { profiles_table, courses_table } from "../index"
 
 
 let router = express.Router();
@@ -20,7 +21,7 @@ let router = express.Router();
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
-        const user_profile = new UserProfile("", "", req.body.email, "", "Free", [], []);
+        const user_profile = new UserProfile("", "", req.body.email, "", "Free", [], [], []);
         await profiles_table.insertOne(user_profile);
         res.send(config.get_status_message("profile_created"));
     } catch (e) {
@@ -41,8 +42,9 @@ router.use(body_parser.json());
 router.post("/update", async (req: Request, res: Response) => {
     try {
         const user_profile = new UserProfile(req.body.name, req.body.profile_picture, req.body.email, 
-                                            req.body.country, req.body.subscription_type, req.body.interesting_genres, []);
+                                            req.body.country, req.body.subscription_type, req.body.interesting_genres, [], []);
         delete user_profile.collaborator_courses; //Hack to prevent collaborator courses reset
+        delete user_profile.subscribed_courses; //Hack to prevent collaborator courses reset
         const query = { "email": req.body.email };
         const update = { "$set": user_profile };
         const options = { "upsert": false };
@@ -122,6 +124,59 @@ if (!get_profile_schema(req.params)) {
     }
     });
 }
+});
+
+
+function can_subscribe(user_subscription: string, course_subscription: string): boolean {
+    let subscriptions: any = config.get_subscription_types();
+    return subscriptions[user_subscription]["price"] >= subscriptions[course_subscription]["price"];
+}
+
+
+router.post("/subscribe_to_course", async (req: Request, res: Response) => {
+    if (subscribe_to_course_schema(req.body)) {
+        try {
+            let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
+                                    {projection: { "_id": 1, "creator_email": 1, "students": 1, "subscription_type": 1}});
+            let user = await profiles_table.findOne({email: req.body.user_email}, 
+                    {projection: { "_id": 1, 
+                                   "subscribed_courses": 1,
+                                   "subscription_type": 1,
+                     }});
+            if (existing_course === null) {
+                res.send(config.get_status_message("non_existent_course"));
+                return;
+            }
+            if (user === null) {
+                let message = config.get_status_message("non_existent_user");
+                res.status(message["code"]).send(message);
+                return;
+            }
+            if ((req.body.user_email === existing_course.creator_email) || (existing_course.collaborators.includes(req.body.user_email))) {
+                res.send(config.get_status_message("user_is_proffessor"));
+                return;
+            }
+            if (can_subscribe(user.subscription_type, existing_course.subscription_type)) {
+                if (!existing_course.students.includes(req.body.user_email)) {
+                    existing_course.students.push(req.body.user_email);
+                }
+                if (!user.subscribed_courses.includes(req.body.course_id)) {
+                    user.subscribed_courses.push(req.body.course_id);
+                }
+                await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$set": {students: existing_course.students}});
+                await profiles_table.updateOne({email: req.body.user_email}, {"$set": {subscribed_courses: user.subscribed_courses}});
+                res.send(config.get_status_message("collaborator_added"));
+            } else {
+                res.send(config.get_status_message("subscription_added"));
+            }
+        } catch (err) {
+            console.log(err);
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
 });
 
 module.exports = router;
