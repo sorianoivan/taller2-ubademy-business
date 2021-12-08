@@ -24,3 +24,15 @@ services:
       - /app/node_modules
     depends_on:
       - mongodb_business
+      
+  backend_payments:
+    build: ../taller2-ubademy-payments
+    container_name: payments
+    image: backend_payments
+    expose:
+      - "8003"
+    volumes:
+      - ../taller2-ubademy-payments:/app 
+      - /app/node_modules
+    depends_on:
+      - mongodb_business
