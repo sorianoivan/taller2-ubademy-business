@@ -20,6 +20,19 @@ import { Exam } from "../models/exam"
 import { CompletedExam } from "../models/completed_exam";
 
 
+// Returns true if the email is equal to the coreator's email of one of the collaborators
+function check_if_proffessor(email: string, creator:string, collaborators: string[]) {
+    if (email === creator) {
+        return true;
+    }
+    collaborators.forEach((collaborator: string) => {
+        if (email === collaborator) {
+            return true;
+        }
+    });
+    return false;
+}
+
 
 
 let router = express.Router();
