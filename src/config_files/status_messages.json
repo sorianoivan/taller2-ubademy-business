@@ -46,5 +46,6 @@
 "wrong_subscription": {"status": "error", "message": "course not allowed to subscription"},
 "subscription_added": {"status": "ok", "message": "subscription added"},
 "got_students_names": {"status": "ok", "message": "got students names"},
+"passed_courses": {"status": "ok", "message": "got passed courses"},
 "exam_already_graded": {"status": "error", "message": "exam already graded"}
 }
