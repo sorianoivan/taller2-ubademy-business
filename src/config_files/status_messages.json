@@ -40,6 +40,13 @@
 "duplicated_exam_name": {"status": "error", "message": "exam name duplicated", "code": 415},
 "not_creator": {"status": "error", "message": "not the creator"},
 "collaborator_added": {"status": "ok", "message": "collaborator added"},
+"collaborator_is_creator": {"status": "error", "message": "collaborator is creator"},
+"user_is_proffessor": {"status": "error", "message": "user is proffessor"},
+"not_the_creator": {"status": "error", "message": "user is not creator"},
+"wrong_subscription": {"status": "error", "message": "course not allowed to subscription"},
+"subscription_added": {"status": "ok", "message": "subscription added"},
+"got_students_names": {"status": "ok", "message": "got students names"},
+"exam_already_graded": {"status": "error", "message": "exam already graded"},
 "collaborator_is_creator": {"status": "ok", "message": "collaborator is creator"},
 "exam_already_graded": {"status": "error", "message": "exam already graded"},
 "unauthorized_api_key": {"status": "error", "message": "unauthorized api key"}
