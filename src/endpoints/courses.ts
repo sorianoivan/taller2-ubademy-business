@@ -758,46 +758,6 @@ router.get("/:id/students/:user_email/:exam_name", async (req: Request, res: Res
 //Returns the emails of the students that completed the received course
 router.get("/passing_courses/:user_email", async (req: Request, res: Response) => {
     try {
-        // let existing_course = await courses_table.findOne({_id: new ObjectId(req.params.id)}, 
-        //         {projection: { "_id": 1, 
-        //         "students": 1,
-        //         "creator_email": 1,
-        //      }});
-
-
-
-        // if (existing_course === null) {
-        //     res.send(config.get_status_message("non_existent_course"));
-        //     return;
-        // }
-        // if (existing_course.creator_email === req.params.user_email) {
-
-        //     if (req.params.exam_name === "none") {
-        //         res.send({...config.get_status_message("got_students_names"), "names": existing_course.students});
-        //         return;
-        //     } else {
-        //         let students = await exams_table.aggregate(
-        //             [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(req.params.id)]}}},
-        //             {"$unwind": {"path": "$exams"}},
-        //             {"$match": {"$expr": {"$eq":["$exams.exam_name", req.params.exam_name]}}},
-        //             {"$unwind": {"path": "$exams.students_exams"}},
-        //             {"$project": {
-        //                 "_id": 0, 
-        //                 "student_email": "$exams.students_exams.student_email",
-        //             }}]).toArray();
-        //         if (students.length === 0) {
-        //             res.send(config.get_status_message("exam_not_completed")); return;
-        //         } else {
-        //             let students_names = students.map(function(student: any) {
-        //                 return student.student_email;
-        //             });
-        //             res.send({...config.get_status_message("got_students_names"), "names": students_names}); return;
-        //         }
-        //     }
-        // } else {
-        //     res.send(config.get_status_message("not_the_creator"));
-        // }
-
         let passed_courses = await profiles_table.findOne({email: req.params.user_email}, {projection: {_id: 0, "passed_courses": 1}});
         console.log(passed_courses);
         if (passed_courses === null) {
