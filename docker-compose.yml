@@ -29,8 +29,6 @@ services:
     build: ../taller2-ubademy-payments
     container_name: payments
     image: backend_payments
-    ports:
-      - "8003:8003"
     expose:
       - "8003"
     volumes:
