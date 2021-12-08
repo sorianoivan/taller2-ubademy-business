@@ -368,6 +368,45 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
     }
 });
 
+
+
+
+
+async function update_course_status(student_email: string, course_id: string): Promise<boolean> {
+    let find_filter = {_id: new ObjectId(course_id)};
+    let exams_amount = await exams_table.findOne(find_filter, {projection: { _id: 1, "exams_amount": 1 }});
+
+    if (exams_amount === null) {
+        return false;
+    }
+
+    let exams_passed = await exams_table.aggregate(
+        [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(course_id)]}}},
+          {"$unwind": {"path": "$exams"}},
+          {"$unwind": {"path": "$exams.students_exams"}},
+          {"$match": 
+            {"$expr": {"$eq": ["$exams.students_exams.student_email", student_email]}}},
+          {"$match": 
+            {"$expr": {"$gte": ["$exams.students_exams.mark", PASSING_MARK]}}},
+          {"$project": 
+            {"_id": 0,
+              "exams": "$exams.exam_name"
+              }}]).toArray();
+    if (exams_amount.exams_amount === exams_passed.length) {
+        let passed_courses = await profiles_table.findOne(find_filter, {projection: { _id: 1, "passed_courses": 1 }});
+        if (passed_courses === null) {
+            return false;
+        }
+        if (!passed_courses.passed_courses.includes(course_id)) {
+            passed_courses.passed_courses.push(course_id);
+        }
+        await profiles_table.updateOne(find_filter, {"$set": {"passed_courses": passed_courses.passed_courses}});
+    }
+    return true;
+}
+
+
+
 router.post("/grade_exam", async (req: Request, res: Response) => {
     if (grade_exam_schema(req.body)) {
         try {
@@ -386,7 +425,7 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                           {"$match": {"$expr": {"$eq": ["$exams.exam_name", req.body.exam_name]}}},
                           {"$unwind": {"path": "$exams.students_exams"}},
                           {"$match": 
-                            {"$expr": {"$eq": ["$exams.students_exams.student_email", req.body.student_email]}}},
+                            {"$expr": {"$eq": ["$exams.students_exams.student_email", req.body.course_id]}}},
                           {"$project": 
                             {"_id": 0,
                               "professors_notes": "$exams.students_exams.professor_notes",
@@ -406,6 +445,12 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                             let array_filter = {arrayFilters: [ {"e.student_email": req.body.student_email}, {"s.exam_name": req.body.exam_name} ], "multi": true};
 
                             await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
+
+                            if (!await update_course_status(req.body.course_id, req.body.course_id)) {
+                                let message = config.get_status_message("unexpected_error");
+                                res.status(message["code"]).send(message);
+                            }
+
                             res.send(config.get_status_message("exam_graded")); return;
                         } else {
                             res.send(config.get_status_message("exam_already_graded")); return;
