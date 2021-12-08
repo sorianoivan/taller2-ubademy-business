@@ -631,6 +631,7 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
         if (req.params.projection === "questions") {
             if (req.params.student_email !== "none") {
                 res.send(config.get_status_message("questions_have_no_students"));
+                return;
             }
             query.push({"$project": {
                 "_id": 0, 
