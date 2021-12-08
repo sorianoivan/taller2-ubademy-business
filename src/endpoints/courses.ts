@@ -662,7 +662,7 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
                 exam[0].mark = "Not graded";
                 exam[0].corrections = undefined;
             }
-            res.send({...config.get_status_message("got_exam"), "exam": exam});
+            res.send({...config.get_status_message("got_exam"), "exam": exam[0]});
         }
     } catch (err) {
         console.log(err);
