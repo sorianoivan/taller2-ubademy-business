@@ -119,16 +119,22 @@ function send_filtered_courses(res: Response, filter_document: any, projection_d
     }
 }
 
+router.get("/organized/:course_filter/:subscription_filter", async (req: Request, res: Response) => {
+    let filter: any = {};
+    let projection: any = {"title": 1, "images": 1, "subscription_type": 1, "course_type": 1};
+    if (req.params.course_filter !== "none") {
+        filter.course_type = req.params.course_filter;
+        delete projection.course_type;
+    }
+    if (req.params.subscription_filter !== "none") {
+        filter.subscription_type = req.params.subscription_filter;
+        delete projection.subscription_type;
+    }
 
-//TODO: VER SI METEMOS UN ENDPOINT PARA VER LOS TIPOS DE FILTRADO QUE HAY
-router.get("/organized/:filter_type/:filter", async (req: Request, res: Response) => {
-    let filter_type = req.params.filter_type;
-    if (filter_type === "course_type") {
-        send_filtered_courses(res, {"course_type": req.params.filter}, {"title": 1, "images": 1, "subscription_type": 1});
-    } else if (filter_type === "subscription_type") {
-        send_filtered_courses(res, {"subscription_type": req.params.filter}, {"title": 1, "images": 1, "course_type": 1});
+    if (Object.keys(filter).length !== 0) {
+        send_filtered_courses(res, filter, projection);
     } else {
-        res.send(config.get_status_message("non_existent_filter_type"));
+        res.send(config.get_status_message("no_filter"));
     }
 });
 
@@ -602,7 +608,7 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
 
 
 //projection: questions or completed_exam
-router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:Response) => {
+router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req: Request, res:Response) => {
     let id = req.params.id;
     const Id = schema(String); //TODO: SE PODRIA CAMBIAR ESTO A UN SCHEMA QUE CHEQUEE EL LARGO DEL STRING
     if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
@@ -610,8 +616,11 @@ router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:R
         return;
     }
 
-    //TODO: AGREGAR CHEQUEO DE QUE EL MAIL ES DEL CREADOR O DE UN COLABORADOR, O DE ALGUIEN INSCRIPTO AL CURSO
+    //TODO: AGREGAR CHEQUEO DE QUE EL MAIL email ES DEL CREADOR O DE UN COLABORADOR, O DE ALGUIEN INSCRIPTO AL CURSO
     //TODO: PROBAR BIEN QUE ESTO ANDE CUANDO SE MERGEE 
+
+    //SI email ES DEL CREADOR O DE UN COLABORADOR ENTONCES PUEDE VER CUALQUIER EXAMEN, SINO SOLO PUEDE VER EL SUYO,
+    //SI PROJECTION ES QUESTIONS ENTONCES student_email TIENE QUE SER none
 
     //TODO: AGREGAR SCHEMA Q CHEQUEE LO Q RECIBIMOS EN FILTER
 
@@ -620,6 +629,10 @@ router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:R
                      {"$unwind": {"path": "$exams"}},
                      {"$match": {"$expr": {"$eq":["$exams.exam_name", req.params.exam_name]}}}];
         if (req.params.projection === "questions") {
+            if (req.params.student_email !== "none") {
+                res.send(config.get_status_message("questions_have_no_students"));
+                return;
+            }
             query.push({"$project": {
                 "_id": 0, 
                 "questions": "$exams.questions",
@@ -627,7 +640,7 @@ router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:R
         } else if (req.params.projection === "completed_exam") {
             let rest_of_query = [
                 {"$unwind": {"path": "$exams.students_exams"}},
-                {"$match": {"$expr": {"$eq":["$exams.students_exams.student_email", req.params.email]}}},
+                {"$match": {"$expr": {"$eq":["$exams.students_exams.student_email", req.params.student_email]}}},
                 {"$project": {
                     "_id": 0, 
                     "questions": "$exams.questions",
@@ -649,7 +662,7 @@ router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:R
                 exam[0].mark = "Not graded";
                 exam[0].corrections = undefined;
             }
-            res.send({...config.get_status_message("got_exam"), "exam": exam});
+            res.send({...config.get_status_message("got_exam"), "exam": exam[0]});
         }
     } catch (err) {
         console.log(err);
