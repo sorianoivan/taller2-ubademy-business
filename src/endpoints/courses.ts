@@ -119,16 +119,22 @@ function send_filtered_courses(res: Response, filter_document: any, projection_d
     }
 }
 
+router.get("/organized/:course_filter/:subscription_filter", async (req: Request, res: Response) => {
+    let filter: any = {};
+    let projection: any = {"title": 1, "images": 1, "subscription_type": 1, "course_type": 1};
+    if (req.params.course_filter !== "none") {
+        filter.course_type = req.params.course_filter;
+        delete projection.course_type;
+    }
+    if (req.params.subscription_filter !== "none") {
+        filter.subscription_type = req.params.subscription_filter;
+        delete projection.subscription_type;
+    }
 
-//TODO: VER SI METEMOS UN ENDPOINT PARA VER LOS TIPOS DE FILTRADO QUE HAY
-router.get("/organized/:filter_type/:filter", async (req: Request, res: Response) => {
-    let filter_type = req.params.filter_type;
-    if (filter_type === "course_type") {
-        send_filtered_courses(res, {"course_type": req.params.filter}, {"title": 1, "images": 1, "subscription_type": 1});
-    } else if (filter_type === "subscription_type") {
-        send_filtered_courses(res, {"subscription_type": req.params.filter}, {"title": 1, "images": 1, "course_type": 1});
+    if (Object.keys(filter).length !== 0) {
+        send_filtered_courses(res, filter, projection);
     } else {
-        res.send(config.get_status_message("non_existent_filter_type"));
+        res.send(config.get_status_message("no_filter"));
     }
 });
 
