@@ -22,7 +22,7 @@ const PAYMENTS_BACKEND_URL = process.env.PAYMENTS_BACKEND_URL;
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
-        const user_profile = new UserProfile("", "", req.body.email, "", "Free", [], [], []);
+        const user_profile = new UserProfile("", "", req.body.email, "", "Free", [], [], [], []);
         await profiles_table.insertOne(user_profile);
         //Send request to create wallet to payments backend
         axios.post(PAYMENTS_BACKEND_URL + "/wallet", {
@@ -33,6 +33,7 @@ router.post("/create", async (req: Request, res: Response) => {
             console.log(response.status);
             if (response.data["status"] !== "ok") {
                 res.send({"status":"error", "message":response.data["message"]});
+                return;
             }
         })
         .catch((error:any) => {
@@ -59,9 +60,10 @@ router.use(body_parser.json());
 router.post("/update", async (req: Request, res: Response) => {
     try {
         const user_profile = new UserProfile(req.body.name, req.body.profile_picture, req.body.email, 
-                                            req.body.country, req.body.subscription_type, req.body.interesting_genres, [], []);
+                                            req.body.country, req.body.subscription_type, req.body.interesting_genres, [], [], []);
         delete user_profile.collaborator_courses; //Hack to prevent collaborator courses reset
-        delete user_profile.subscribed_courses; //Hack to prevent collaborator courses reset
+        delete user_profile.subscribed_courses; //Hack to prevent subsribed courses reset
+        delete user_profile.passed_courses; //Hack to prevent passed courses reset
         const query = { "email": req.body.email };
         const update = { "$set": user_profile };
         const options = { "upsert": false };

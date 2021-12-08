@@ -47,7 +47,6 @@
 "subscription_added": {"status": "ok", "message": "subscription added"},
 "got_students_names": {"status": "ok", "message": "got students names"},
 "exam_already_graded": {"status": "error", "message": "exam already graded"},
-"collaborator_is_creator": {"status": "ok", "message": "collaborator is creator"},
-"exam_already_graded": {"status": "error", "message": "exam already graded"},
-"unauthorized_api_key": {"status": "error", "message": "unauthorized api key"}
+"unauthorized_api_key": {"status": "error", "message": "unauthorized api key"},
+"passed_courses": {"status": "ok", "message": "got passed courses"}
 }
