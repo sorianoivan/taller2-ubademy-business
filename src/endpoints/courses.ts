@@ -198,7 +198,12 @@ router.put("/update", async (req: Request, res: Response) => {
 router.post("/create_exam", async (req: Request, res: Response) => {
     if (create_exam_schema(req.body) && (req.body.questions.length !== 0)) {
         try {
-            let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "total_exams": 1 }});
+            let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
+                                                        {projection: { 
+                                                            "total_exams": 1,
+                                                            asdasdasd
+                                                            //hay que pedir el creador del curso y el collaborator y usar la funcion que arme arriba de todo
+                                                        }});
             let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
 
             // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
