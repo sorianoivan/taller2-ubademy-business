@@ -20,19 +20,6 @@ let router = express.Router();
 const PAYMENTS_BACKEND_URL = process.env.PAYMENTS_BACKEND_URL;
 const PAYMENTS_API_KEY = "03aaeb781af46e2f06a9784c2a8e4b26a3fd89f96ad08e2988917ba76f7d9933"
 
-router.get('/wallet', async (req: Request, res:Response) => {
-    console.log(PAYMENTS_BACKEND_URL + "/wallet")
-    axios.get(PAYMENTS_BACKEND_URL + "/wallet", {},
-        { headers: { authorization: PAYMENTS_API_KEY } }
-        )
-        .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
-            console.log(response.data);
-            console.log(response.status);
-            if (response.status === 200) {
-                res.send({status: "ok"});
-            }
-        })
-});
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
