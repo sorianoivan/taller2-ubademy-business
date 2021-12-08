@@ -50,15 +50,15 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   });
 
   app.get("/", (req: Request, res: Response) => {
-    res.send("Hello world!");
+    res.send({"status": "ok", "message": "Hello world!"});
   });
 
   app.get("/ping", (req: Request, res: Response) => {
-    res.send("pong");
+    res.send({"status": "ok", "message": "pong"});
   });
 
   app.get("/status", (req: Request, res: Response) => {
-    res.send("ok");
+    res.send({"status": "ok"});
   });
 
   app.use("/courses", courses);
