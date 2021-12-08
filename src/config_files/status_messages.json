@@ -47,5 +47,6 @@
 "subscription_added": {"status": "ok", "message": "subscription added"},
 "got_students_names": {"status": "ok", "message": "got students names"},
 "passed_courses": {"status": "ok", "message": "got passed courses"},
+"questions_have_no_students": {"status": "ok", "message": "questions have no student assigned"},
 "exam_already_graded": {"status": "error", "message": "exam already graded"}
 }

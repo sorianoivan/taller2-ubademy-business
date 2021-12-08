@@ -608,7 +608,7 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
 
 
 //projection: questions or completed_exam
-router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:Response) => {
+router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req: Request, res:Response) => {
     let id = req.params.id;
     const Id = schema(String); //TODO: SE PODRIA CAMBIAR ESTO A UN SCHEMA QUE CHEQUEE EL LARGO DEL STRING
     if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
@@ -616,8 +616,11 @@ router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:R
         return;
     }
 
-    //TODO: AGREGAR CHEQUEO DE QUE EL MAIL ES DEL CREADOR O DE UN COLABORADOR, O DE ALGUIEN INSCRIPTO AL CURSO
+    //TODO: AGREGAR CHEQUEO DE QUE EL MAIL email ES DEL CREADOR O DE UN COLABORADOR, O DE ALGUIEN INSCRIPTO AL CURSO
     //TODO: PROBAR BIEN QUE ESTO ANDE CUANDO SE MERGEE 
+
+    //SI email ES DEL CREADOR O DE UN COLABORADOR ENTONCES PUEDE VER CUALQUIER EXAMEN, SINO SOLO PUEDE VER EL SUYO,
+    //SI PROJECTION ES QUESTIONS ENTONCES student_email TIENE QUE SER none
 
     //TODO: AGREGAR SCHEMA Q CHEQUEE LO Q RECIBIMOS EN FILTER
 
@@ -626,6 +629,9 @@ router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:R
                      {"$unwind": {"path": "$exams"}},
                      {"$match": {"$expr": {"$eq":["$exams.exam_name", req.params.exam_name]}}}];
         if (req.params.projection === "questions") {
+            if (req.params.student_email !== "none") {
+                res.send(config.get_status_message("questions_have_no_students"));
+            }
             query.push({"$project": {
                 "_id": 0, 
                 "questions": "$exams.questions",
@@ -633,7 +639,7 @@ router.get("/:id/exam/:email/:exam_name/:projection", async (req: Request, res:R
         } else if (req.params.projection === "completed_exam") {
             let rest_of_query = [
                 {"$unwind": {"path": "$exams.students_exams"}},
-                {"$match": {"$expr": {"$eq":["$exams.students_exams.student_email", req.params.email]}}},
+                {"$match": {"$expr": {"$eq":["$exams.students_exams.student_email", req.params.student_email]}}},
                 {"$project": {
                     "_id": 0, 
                     "questions": "$exams.questions",
