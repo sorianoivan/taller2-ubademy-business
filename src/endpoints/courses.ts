@@ -67,9 +67,10 @@ router.post("/create", async (req: Request, res: Response) => {
     }
 })
 
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id/:email", async (req: Request, res: Response) => {
     try{
         let id = req.params.id;
+        let email = req.params.email;
         const Id = schema(String);
         if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
             res.send(config.get_status_message("invalid_course_id"));
@@ -81,8 +82,19 @@ router.get("/:id", async (req: Request, res: Response) => {
             return;
         }
         console.log(my_course);//To debug
-        let response = {"status":"ok", "course":my_course};
-        res.send(response);
+        const user = await profiles_table.findOne({"email": email});
+        if (user == null) {
+            res.send(config.get_status_message("non_existent_user"));
+            return;
+        }
+        console.log(user);//To debug
+        if (config.get_subscription_types()[user.subscription_type]["price"] >= config.get_subscription_types()[my_course.subscription_type]["price"]) {
+            let response = {"status":"ok", "course":my_course};
+            res.send(response);
+        } else {
+            let response = {"status":"error", "message":"Low subscription tier"};
+            res.send(response);
+        }
     } catch (err) {
         console.log(err);
         let message = config.get_status_message("unexpected_error");
