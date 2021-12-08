@@ -41,7 +41,6 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
 
   app.use((req: Request, res: Response, next) => {
     let auth_key = req.get('Authorization');
-    console.log(auth_key);
     if(!auth_key || auth_key !== API_KEY) {
         res.send(config.get_status_message("unauthorized_api_key"));
         return;
