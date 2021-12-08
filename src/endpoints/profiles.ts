@@ -33,6 +33,7 @@ router.post("/create", async (req: Request, res: Response) => {
             console.log(response.status);
             if (response.data["status"] !== "ok") {
                 res.send({"status":"error", "message":response.data["message"]});
+                return;
             }
         })
         .catch((error:any) => {
