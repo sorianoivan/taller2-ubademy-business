@@ -368,6 +368,59 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
     }
 });
 
+
+
+
+
+async function update_course_status(student_email: string, course_id: string): Promise<boolean> {
+    let find_filter = {_id: new ObjectId(course_id)};
+    let exams_amount = await exams_table.findOne(find_filter, {projection: { _id: 1}});
+
+    if (exams_amount === null) {
+        return false;
+    }
+
+    //TODO: AGREGAR QUE LOS EXAMENES QUE ESTAN CORREGIDOS TIENEN QUE ESTAR PUBLICADOS PARA SER TOMADOS EN CUENTA
+
+    let exams_passed = await exams_table.aggregate(
+        [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(course_id)]}}},
+          {"$unwind": {"path": "$exams"}},
+          {"$match": 
+            {"$expr": {"$eq": ["$exams.is_published", true]}}},
+          {"$unwind": {"path": "$exams.students_exams"}},
+          {"$match": 
+            {"$expr": {"$eq": ["$exams.students_exams.student_email", student_email]}}},
+          {"$match": 
+            {"$expr": {"$gte": ["$exams.students_exams.mark", PASSING_MARK]}}},
+          {"$project": 
+            {"_id": 0,
+              "exams": "$exams.exam_name"
+              }}]).toArray();
+
+    let published_exams = await exams_table.aggregate(
+        [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(course_id)]}}},
+          {"$unwind": {"path": "$exams"}},
+          {"$match": 
+            {"$expr": {"$eq": ["$exams.is_published", true]}}},
+          {"$project": 
+            {"_id": 0,
+              "exams": "$exams.exam_name"
+              }}]).toArray();
+    if ((published_exams.length === exams_passed.length) && (exams_amount.exams_amount != 0)) {
+        let passed_courses = await profiles_table.findOne({email: student_email}, {projection: { _id: 1, "passed_courses": 1 }});
+        if (passed_courses === null) {
+            return false;
+        }
+        if (!passed_courses.passed_courses.includes(course_id)) {
+            passed_courses.passed_courses.push(course_id);
+        }
+        await profiles_table.updateOne({email: student_email}, {"$set": {"passed_courses": passed_courses.passed_courses}});
+    }
+    return true;
+}
+
+
+
 router.post("/grade_exam", async (req: Request, res: Response) => {
     if (grade_exam_schema(req.body)) {
         try {
@@ -406,6 +459,13 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                             let array_filter = {arrayFilters: [ {"e.student_email": req.body.student_email}, {"s.exam_name": req.body.exam_name} ], "multi": true};
 
                             await exams_table.updateOne({_id: new ObjectId(req.body.course_id)}, update_document_query, array_filter);
+
+                            if (!await update_course_status(req.body.student_email, req.body.course_id)) {
+                                let message = config.get_status_message("unexpected_error");
+                                res.status(message["code"]).send(message);
+                                return;
+                            }
+
                             res.send(config.get_status_message("exam_graded")); return;
                         } else {
                             res.send(config.get_status_message("exam_already_graded")); return;
@@ -686,6 +746,29 @@ router.get("/:id/students/:user_email/:exam_name", async (req: Request, res: Res
         } else {
             res.send(config.get_status_message("not_the_creator"));
         }
+    } catch (err) {
+        console.log(err);
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
+    }
+});
+
+
+
+//Returns the emails of the students that completed the received course
+router.get("/passing_courses/:user_email", async (req: Request, res: Response) => {
+    try {
+        let passed_courses = await profiles_table.findOne({email: req.params.user_email}, {projection: {_id: 0, "passed_courses": 1}});
+        console.log(passed_courses);
+        if (passed_courses === null) {
+            res.send(config.get_status_message("non_existent_user"));
+            return;
+        }
+        passed_courses.passed_courses = passed_courses.passed_courses.map(function(course_id: string) {
+            return new ObjectId(course_id);
+        });
+        let passed_courses_names = await courses_table.find({_id: {"$in": passed_courses.passed_courses}}, {projection: {_id: 0, "creator_email": 1, "title": 1}}).toArray();
+        res.send({...config.get_status_message("passed_courses"), "passed_courses_names": passed_courses_names});
     } catch (err) {
         console.log(err);
         let message = config.get_status_message("unexpected_error");
