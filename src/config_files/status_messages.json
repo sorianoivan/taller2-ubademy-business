@@ -18,7 +18,7 @@
 "invalid_course_id": {"status": "error", "message": "invalid_course_id"},
 "invalid_editor": {"status": "error", "message": "invalid_editor"},
 "non_existent_filter": {"status": "error", "message": "invalid filter"},
-"non_existent_filter_type": {"status": "error", "message": "invalid filter type"},
+"no_filter": {"status": "error", "message": "no filter specified"},
 "exam_created": {"status": "ok", "message": "exam succesfully created"},
 "no_exam_doc_for_course": {"status": "error", "message": "no exam document entry for existing course", "code": 413},
 "max_number_of_exams": {"status": "error", "message": "exams cap already reached"},
@@ -35,7 +35,7 @@
 "exam_not_completed": {"status": "error", "message": "exam not completed"},
 "correction_not_completed": {"status": "error", "message": "correction not completed"},
 "exam_graded": {"status": "ok", "message": "exam graded"},
-"exam_already_published": {"status": "error", "message": "exam already published"},
+"exam_already_published": {"status": "error", "message": "exam already published"}, 
 "duplicated_exam_completion": {"status": "error", "message": "completed exam duplicated", "code": 414},
 "duplicated_exam_name": {"status": "error", "message": "exam name duplicated", "code": 415},
 "not_creator": {"status": "error", "message": "not the creator"},
@@ -45,7 +45,9 @@
 "not_the_creator": {"status": "error", "message": "user is not creator"},
 "wrong_subscription": {"status": "error", "message": "course not allowed to subscription"},
 "subscription_added": {"status": "ok", "message": "subscription added"},
+"subscription_deleted": {"status": "ok", "message": "subscription deleted"},
 "got_students_names": {"status": "ok", "message": "got students names"},
 "passed_courses": {"status": "ok", "message": "got passed courses"},
+"questions_have_no_students": {"status": "ok", "message": "questions have no student assigned"},
 "exam_already_graded": {"status": "error", "message": "exam already graded"}
 }

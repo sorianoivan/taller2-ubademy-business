@@ -353,7 +353,7 @@ router.post("/unsubscribe_from_course", async (req: Request, res: Response) => {
             }
             await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$set": {students: existing_course.students}});
             await profiles_table.updateOne({email: req.body.user_email}, {"$set": {subscribed_courses: user.subscribed_courses}});
-            res.send(config.get_status_message("subscription_added"));
+            res.send(config.get_status_message("subscription_deleted"));
 
         } catch (err) {
             console.log(err);
