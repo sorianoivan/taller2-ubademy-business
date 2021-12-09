@@ -44,6 +44,7 @@ router.post("/create", async (req: Request, res: Response) => {
         res.send(config.get_status_message("profile_created"));
     } catch (e) {
         let error = <Error>e;
+        console.log("Error:", e);
         if (error.name === "InvalidConstructionParameters") {
             res.send(config.get_status_message("invalid_body"));
         } else if (error.name === "MongoServerError") {
