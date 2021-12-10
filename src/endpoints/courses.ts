@@ -787,6 +787,27 @@ router.get("/passing_courses/:user_email", async (req: Request, res: Response) =
     }
 });
 
+//Returns the emails of the students that completed the received course
+router.get("/all/:is_admin", async (req: Request, res: Response) => {
+    try {
+        let passed_courses = await profiles_table.findOne({email: req.params.user_email}, {projection: {_id: 0, "passed_courses": 1}});
+        console.log(passed_courses);
+        if (passed_courses === null) {
+            res.send(config.get_status_message("non_existent_user"));
+            return;
+        }
+        passed_courses.passed_courses = passed_courses.passed_courses.map(function(course_id: string) {
+            return new ObjectId(course_id);
+        });
+        let passed_courses_names = await courses_table.find({_id: {"$in": passed_courses.passed_courses}}, {projection: {_id: 0, "creator_email": 1, "title": 1}}).toArray();
+        res.send({...config.get_status_message("passed_courses"), "passed_courses_names": passed_courses_names});
+    } catch (err) {
+        console.log(err);
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
+    }
+});
+
 
 
 module.exports = router;
