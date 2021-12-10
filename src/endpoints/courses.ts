@@ -97,13 +97,13 @@ router.get("/:id/:email/:privilege", async (req: Request, res: Response) =>  {
         }
         console.log(user);//To debug
         if (user.email === my_course.creator_email || my_course.collaborators.includes(user.email) || privilege === 'admin') {
-            let response = {"status":"ok", "course":my_course};
+            let response = {"status":"ok", "course":my_course, "info_level":"full"};//Le mando todo
             res.send(response);
         } else if (can_see_full_course(user, my_course)) {//Si esta suscripto y le alcanza la suscripcion
             let preview_course = my_course;
             preview_course.collaborators = undefined;
             preview_course.students = undefined;
-            let response = {"status":"ok", "course":preview_course};
+            let response = {"status":"ok", "course":preview_course, "info_level":"subscription"};//Todo menos alumnos y colaboradores
             res.send(response);
         } else {
             let preview_course = my_course;
@@ -112,7 +112,7 @@ router.get("/:id/:email/:privilege", async (req: Request, res: Response) =>  {
             preview_course.videos = undefined;
             preview_course.images = my_course.images[0];
             preview_course.total_exams = undefined;
-            let response = {"status":"ok", "course":preview_course};
+            let response = {"status":"ok", "course":preview_course, "info_level":"basic"};//Mando solo lo basico
             res.send(response);
         }
     } catch (err) {
