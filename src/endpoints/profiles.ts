@@ -22,26 +22,31 @@ const PAYMENTS_BACKEND_URL = process.env.PAYMENTS_BACKEND_URL;
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
-        const user_profile = new UserProfile("", "", req.body.email, "", "Free", [], [], [], []);
-        await profiles_table.insertOne(user_profile);
         //Send request to create wallet to payments backend
-        axios.post(PAYMENTS_BACKEND_URL + "/wallet", {
+        let wallet_created = await axios.post(PAYMENTS_BACKEND_URL + "/wallet", {
             email: req.body.email,
         })
-        .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
+        .then((response:any) => {
             console.log(response.data);
             console.log(response.status);
             if (response.data["status"] !== "ok") {
-                res.send({"status":"error", "message":response.data["message"]});
-                return;
+                return false;
             }
+            return true;
         })
         .catch((error:any) => {
             console.log("Error creating wallet: ", error);
-            res.send({"status":"error", "message":"could not create wallet"});
-            return;
+            return false;
         });
-        res.send(config.get_status_message("profile_created"));
+        if (!wallet_created) {
+            res.send({"status":"error", "message":"Profile creation failed: Could not create wallet"});
+        } else {
+            const user_profile = new UserProfile("", "", req.body.email, "", "Free", [], [], [], []);
+            await profiles_table.insertOne(user_profile);
+            console.log("Profile Created: ", wallet_created);
+            res.send(config.get_status_message("profile_created"));
+        }
+
     } catch (e) {
         let error = <Error>e;
         console.log("Error:", e);
