@@ -74,10 +74,11 @@ const can_see_full_course = (user: any, course: any) =>  {
 }
 
 //Este es para que el creador o los colaboradores vean los datos del curso
-router.get("/:id/:email", async (req: Request, res: Response) =>  {
+router.get("/:id/:email/:privilege", async (req: Request, res: Response) =>  {
     try{
         let id = req.params.id;
         let email = req.params.email;
+        let privilege = req.params.privilege;
         const Id = schema(String);
         if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
             res.send(config.get_status_message("invalid_course_id"));
@@ -95,7 +96,7 @@ router.get("/:id/:email", async (req: Request, res: Response) =>  {
             return;
         }
         console.log(user);//To debug
-        if (user.email === my_course.creator_email || my_course.collaborators.includes(user.email)) {
+        if (user.email === my_course.creator_email || my_course.collaborators.includes(user.email) || privilege === 'admin') {
             let response = {"status":"ok", "course":my_course};
             res.send(response);
         } else if (can_see_full_course(user, my_course)) {//Si esta suscripto y le alcanza la suscripcion
