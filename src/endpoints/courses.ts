@@ -625,7 +625,7 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
 
 
 function is_from_course(user: string, creator_email: string, collaborators: string, students: string): boolean {
-    return (user !== creator_email) && (!collaborators.includes(user)) && (!students.includes(user));
+    return (user === creator_email) || (collaborators.includes(user)) || (students.includes(user));
 }
 
 //projection: questions or completed_exam
@@ -651,7 +651,7 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
                                                                             "collaborators": 1,
                                                                             "students": 1,
                                                                         }});
-
+    console.log(course_data);
     if (!is_from_course(req.params.email, course_data.creator_email, course_data.collaborators, course_data.students)) {
         res.send(config.get_status_message("not_from_course"));
         return;    
