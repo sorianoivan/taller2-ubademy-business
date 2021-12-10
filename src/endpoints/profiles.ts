@@ -395,33 +395,6 @@ router.get("/my_courses/:user_email", async (req: Request, res: Response) => {
                                           }}).toArray();
     
     res.send({...config.get_status_message("got_courses"), "collaborator": collaborator_courses_names, "creator": user_courses, "student": subscribed_courses_names});
-
-    // profiles_table.find({"email": req.params.profile_email}).toArray(function(err: any, result: any) {
-    // if (err) {
-    //     let message = config.get_status_message("unexpected_error");
-    //     res.status(message["code"]).send(message);
-    // } else if (result === undefined) {
-    //     let message = config.get_status_message("non_existent_user");
-    //     res.status(message["code"]).send(message);
-    // } else if (result.length !== 1) {
-    //     let message = config.get_status_message("duplicated_profile");
-    //     res.status(message["code"]).send(message);
-    // } else {
-    //     let document: any = (<Array<Document>>result)[0];
-    //     let document_to_send: any = {};
-    //     if (!has_private_access) {
-    //         config.get_public_profile_data().forEach((profile_field: string) => {
-    //             document_to_send[profile_field] = document[profile_field];
-    //         });
-    //     } else {
-    //         document_to_send = document;
-    //     }
-    //     res.send({
-    //         ...config.get_status_message("data_sent"),
-    //         "profile": document_to_send
-    //     });
-    // }
-    // });
 });
 
 
