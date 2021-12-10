@@ -201,8 +201,7 @@ router.post("/create_exam", async (req: Request, res: Response) => {
             let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
                                                         {projection: { 
                                                             "total_exams": 1,
-                                                            asdasdasd
-                                                            //hay que pedir el creador del curso y el collaborator y usar la funcion que arme arriba de todo
+                                                            //TODO: hay que pedir el creador del curso y el collaborator y usar la funcion que arme arriba de todo
                                                         }});
             let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
 
@@ -625,6 +624,10 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
 });
 
 
+function is_from_course(user: string, creator_email: string, collaborators: string, students: string): boolean {
+    return (user !== creator_email) && (!collaborators.includes(user)) && (!students.includes(user));
+}
+
 //projection: questions or completed_exam
 router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req: Request, res:Response) => {
     let id = req.params.id;
@@ -641,6 +644,24 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
     //SI PROJECTION ES QUESTIONS ENTONCES student_email TIENE QUE SER none
 
     //TODO: AGREGAR SCHEMA Q CHEQUEE LO Q RECIBIMOS EN FILTER
+
+    let course_data = await courses_table.findOne({_id: new ObjectId(id)}, {projection: {
+                                                                            "_id": 0, 
+                                                                            "creator_email": 1,
+                                                                            "collaborators": 1,
+                                                                            "students": 1,
+                                                                        }});
+
+    if (!is_from_course(req.params.email, course_data.creator_email, course_data.collaborators, course_data.students)) {
+        res.send(config.get_status_message("not_from_course"));
+        return;    
+    }
+    if (req.params.projection === "completed_exam") {
+        if (course_data.students.includes(req.params.email) && (req.params.email !== req.params.student_email)) {
+            res.send(config.get_status_message("not_your_exam"));
+            return;
+        }
+    }
 
     try {
         let query: any = [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
@@ -790,7 +811,6 @@ router.get("/:id/students/:user_email/:exam_name", async (req: Request, res: Res
 router.get("/passing_courses/:user_email", async (req: Request, res: Response) => {
     try {
         let passed_courses = await profiles_table.findOne({email: req.params.user_email}, {projection: {_id: 0, "passed_courses": 1}});
-        console.log(passed_courses);
         if (passed_courses === null) {
             res.send(config.get_status_message("non_existent_user"));
             return;
