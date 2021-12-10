@@ -124,11 +124,9 @@ router.get("/organized/:course_filter/:subscription_filter", async (req: Request
     let projection: any = {"title": 1, "images": 1, "subscription_type": 1, "course_type": 1};
     if (req.params.course_filter !== "none") {
         filter.course_type = req.params.course_filter;
-        delete projection.course_type;
     }
     if (req.params.subscription_filter !== "none") {
         filter.subscription_type = req.params.subscription_filter;
-        delete projection.subscription_type;
     }
 
     if (Object.keys(filter).length !== 0) {
