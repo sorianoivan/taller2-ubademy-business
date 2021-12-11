@@ -217,6 +217,76 @@ router.post("/pay_subscription", async (req: Request, res: Response) => {
     }
 });
 
+router.use(body_parser.json());
+router.post("/validate_subscription", async (req: Request, res: Response) => {
+    try {
+        const user_profile = await profiles_table.findOne({"email": req.body.email});
+        if (user_profile == null) {
+            res.send(config.get_status_message("non_existent_user"));//Ver si tiene sentido mandar este error xq en teoria aca
+                                                                     //llega cuando el user ya esta logueado, deberia existir
+            return;
+        }
+        console.log("USUARIO: ", user_profile);//To debug
+
+        //Ver si hace falta el await
+        await axios.get(PAYMENTS_BACKEND_URL + `/last_deposit/${req.body.email}`)
+        .then((response:any) => {
+            console.log("RESPONSE: ", response.data);
+            if (response.data["status"] === "error") {
+                if (response.data["message"] === "User does not have deposits") {
+                    res.send({"status":"ok", "message":"User does not have deposits"});
+                } else {
+                    res.send({"status":"error", "message":"Could not get last deposit"});
+                }
+                return;
+            }
+            let last_deposit = new Date(response.data.last_deposit_date)
+            console.log("LAST DEPOSIT: ", last_deposit);
+            let date = new Date();
+            date.setHours(date.getHours()-3);//Para que sea la hora de argentina
+            console.log("DATE: ", date);
+            let time_passed = date.getTime() - last_deposit.getTime();//In milliseconds
+            console.log("TIME PASSED: ", time_passed);
+            if (time_passed >= 2592000000) {//One month in ms. Chequearlo o buscar una forma de no hardcodearlo
+                if (user_profile.subscription_type !== "Free") {
+                    let amount_to_pay = config.general_data["subscriptions"][user_profile.subscription_type]["price"];
+                    console.log("Trying to pay: ", amount_to_pay);
+                    axios.post(PAYMENTS_BACKEND_URL + "/deposit", {
+                        email: user_profile.email,
+                        amountInEthers: amount_to_pay.toString(),
+                        newSubscription: user_profile.subscription_type
+                    })
+                    .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
+                        console.log("DEPOSIT RESPONSE: ", response.data);
+                        if (response.data["status"] === "ok") {
+                            res.send({"status":"ok", "message":"transaction is beign processed"})//Si falla le va a poner la sub en free
+                        } else {
+                            let update_response = update_subscription(user_profile.email, "Free");
+                            console.log("UPDATE RESPONSE: ", update_response);
+                            res.send({"status":"error", "message":"Could not pay. Changing suscription to Free"})
+                        }
+                    })
+                    .catch((error:any) => {
+                        console.log(error);
+                        res.send( {"status":"error", "message":error});
+                        //Ver si aca pongo el update subscription a free. Creo que si tiene q ir
+                    });
+                } else {
+                    res.send({"status":"ok", "message":"Free subscription doesnt need payments"});
+                }
+            } else {
+                res.send({"status":"ok", "message":"Subscription is still valid"});
+            }
+        })
+        .catch((error:any) => {
+            console.log(error);
+            res.send( {"status":"error", "message":error});
+        });
+    } catch (e) {
+        res.send({"status":"error", "message":"Unexpected error"}); 
+    }
+});
+
 router.get("/countries", (req: Request, res: Response) => {
     res.send({
         ...config.get_status_message("data_sent"), 
