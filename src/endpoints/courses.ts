@@ -123,7 +123,7 @@ function send_filtered_courses(res: Response, filter_document: any, projection_d
         if (err) {
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
-        } else if (result == null) {
+        } else if (result === null) {
             res.send(config.get_status_message("non_existent_filter"));
         } else {
             let courses: any = <Array<Document>>result;
@@ -362,11 +362,6 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
             } else if (existing_exam.length === 1) {
                 let questions = existing_exam[0].questions;
                 if (questions.length === req.body.answers.length) {
-                    let answered_exam_query = {_id: new ObjectId(req.body.course_id),
-                        "exams": { "$elemMatch": {"exam_name": req.body.exam_name,
-                        "students_exams": {"$elemMatch": {"student_email": req.body.student_email}}}}};
-
-                    //TODO: VER SI PUEDO VOLAR ESTA QUERY, DEBERIA PODER PEDIR TODO SOLO CON LA DE ARRIBA   
                     let answered_exam = await exams_table.aggregate(
                         [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
                           {"$unwind": {"path": "$exams"}},
