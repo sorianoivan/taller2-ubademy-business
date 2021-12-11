@@ -541,29 +541,47 @@ router.get("/:id/students", async (req: Request, res:Response) => {
 });
 
 //filter: none, published_ not_published
-router.get("/exams/:id/:filter", async (req: Request, res:Response) => {
+router.get("/exams/:id/:filter/:user_email", async (req: Request, res:Response) => {
     let id = req.params.id;
     const Id = schema(String); //TODO: SE PODRIA CAMBIAR ESTO A UN SCHEMA QUE CHEQUEE EL LARGO DEL STRING
     if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
         res.send(config.get_status_message("invalid_course_id"));
         return;
     }
-    let query_array: any = [
-        {"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
-        {"$unwind": {"path": "$exams"}}
-    ];
-
-    if (req.params.filter === "published") {
-        query_array.push({"$match": {"$expr": {"$eq": ["$exams.is_published", true]}}});
-    } else if (req.params.filter === "not_published") {
-        query_array.push({"$match": {"$expr": {"$eq": ["$exams.is_published", false]}}});
-    }
-    query_array.push({"$project": {
-                        "_id": 0, 
-                        "exam_name": "$exams.exam_name",
-                        "is_published": "$exams.is_published"
-                    }});
     try {
+        let course = await courses_table.findOne({"_id": new ObjectId(id)}, 
+                                                 {projection: {
+                                                    "creator_email": 1,
+                                                    "collaborators": 1,
+                                                    "students": 1,
+                                                 }});
+
+        if (course === null) {
+            res.send(config.get_status_message("invalid_course_id"));
+            return;
+        }                                                 
+        if (course.students.includes(req.params.user_email)) {
+            req.params.filter = "published";
+        } else if ((req.params.user_email !== course.creator_email) && (!course.collaborators.includes(req.params.user_email))) {
+            res.send(config.get_status_message("not_from_course"));
+            return;
+        }
+        let query_array: any = [
+            {"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
+            {"$unwind": {"path": "$exams"}}
+        ];
+    
+        if (req.params.filter === "published") {
+            query_array.push({"$match": {"$expr": {"$eq": ["$exams.is_published", true]}}});
+        } else if (req.params.filter === "not_published") {
+            query_array.push({"$match": {"$expr": {"$eq": ["$exams.is_published", false]}}});
+        }
+        query_array.push({"$project": {
+                            "_id": 0, 
+                            "exam_name": "$exams.exam_name",
+                            "is_published": "$exams.is_published"
+                        }});
+
         let exams = await exams_table.aggregate(query_array).toArray();
         res.send({...config.get_status_message("got_exams_names"), "exams": exams});
     } catch (err) {

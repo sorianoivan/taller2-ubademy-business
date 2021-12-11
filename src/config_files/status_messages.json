@@ -50,5 +50,6 @@
 "passed_courses": {"status": "ok", "message": "got passed courses"},
 "questions_have_no_students": {"status": "ok", "message": "questions have no student assigned"},
 "got_courses": {"status": "ok", "message": "got own courses"},
+"not_from_course": {"status": "error", "message": "user not from course"},
 "exam_already_graded": {"status": "error", "message": "exam already graded"}
 }
