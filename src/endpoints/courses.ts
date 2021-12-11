@@ -58,7 +58,7 @@ router.post("/create", async (req: Request, res: Response) => {
 
         //TODO: TAL VEZ NO HACE FALTA HACER ESTE FIND PORQUE INSERT YA TE DEVUELVE EL ID, SE PUEDE CAMBIAR
         let found_course = await courses_table.findOne({creator_email: course.creator_email, title: course.title}, {projection: {_id: 1}});
-        if (found_course === undefined) {
+        if (found_course === null) {
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
             return;
@@ -111,7 +111,7 @@ function send_filtered_courses(res: Response, filter_document: any, projection_d
         if (err) {
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
-        } else if (result === undefined) {
+        } else if (result == null) {
             res.send(config.get_status_message("non_existent_filter"));
         } else {
             let courses: any = <Array<Document>>result;
@@ -207,9 +207,9 @@ router.post("/create_exam", async (req: Request, res: Response) => {
 
             // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
 
-            if (course_doc === undefined) {
+            if (course_doc === null) {
                 res.send(config.get_status_message("course_not_found"));
-            } else if (exams_doc === undefined) {
+            } else if (exams_doc === null) {
                 let message = config.get_status_message("no_exam_doc_for_course");
                 res.status(message["code"]).send(message);
             } else {
@@ -564,10 +564,19 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
         res.send(config.get_status_message("invalid_course_id"));
         return;
     }
-
-    //TODO: AGREGAR CHEQUEO DE QUE EL MAIL ES DEL CREADOR O DE UN COLABORADOR
-    //TODO: PROBAR BIEN QUE ESTO ANDE CUANDO SE MERGEE 
-
+    let course_data = await courses_table.findOne({_id: new ObjectId(id)}, {projection: {
+                                                                                "_id": 0, 
+                                                                                "creator_email": 1,
+                                                                                "collaborators": 1,
+                                                                            }});
+    if (course_data === null) {
+        res.send(config.get_status_message("non_existent_course"));
+        return;
+    }                                                                            
+    if ((course_data.creator_email !== req.params.email) && (!course_data.collaborators.includes(req.params.email))) {
+        res.send(config.get_status_message("not_a_proffessor"));
+        return;
+    }                                                                            
     try {
         let exams;
 
@@ -583,7 +592,7 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
                     "status": "$exams.students_exams.mark"
                 }}]).toArray();
             exams.forEach((element:any) => {
-                if (element.status === -1) {
+                if (element.status === NOT_CORRECTED_MARK) {
                     element.status = "Not graded";
                 } else {
                     element.status = "Graded";
@@ -594,7 +603,7 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
                 [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
                 {"$unwind": {"path": "$exams"}},
                 {"$unwind": {"path": "$exams.students_exams"}},
-                {"$match": {"$expr": {"$ne":["$exams.students_exams.mark", -1]}}}, //TODO: CAMBIAR POR LA CONSTANTE DE NOT CORRECTED CUANDO MERGEEMOS
+                {"$match": {"$expr": {"$ne":["$exams.students_exams.mark", NOT_CORRECTED_MARK]}}},
                 {"$project": {
                     "_id": 0, 
                     "exam_name": "$exams.exam_name",
@@ -605,7 +614,7 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
                 [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
                 {"$unwind": {"path": "$exams"}},
                 {"$unwind": {"path": "$exams.students_exams"}},
-                {"$match": {"$expr": {"$eq":["$exams.students_exams.mark", -1]}}}, //TODO: CAMBIAR POR LA CONSTANTE DE NOT CORRECTED CUANDO MERGEEMOS
+                {"$match": {"$expr": {"$eq":["$exams.students_exams.mark", NOT_CORRECTED_MARK]}}},
                 {"$project": {
                     "_id": 0, 
                     "exam_name": "$exams.exam_name",
@@ -636,22 +645,16 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
         res.send(config.get_status_message("invalid_course_id"));
         return;
     }
-
-    //TODO: AGREGAR CHEQUEO DE QUE EL MAIL email ES DEL CREADOR O DE UN COLABORADOR, O DE ALGUIEN INSCRIPTO AL CURSO
-    //TODO: PROBAR BIEN QUE ESTO ANDE CUANDO SE MERGEE 
-
-    //SI email ES DEL CREADOR O DE UN COLABORADOR ENTONCES PUEDE VER CUALQUIER EXAMEN, SINO SOLO PUEDE VER EL SUYO,
-    //SI PROJECTION ES QUESTIONS ENTONCES student_email TIENE QUE SER none
-
-    //TODO: AGREGAR SCHEMA Q CHEQUEE LO Q RECIBIMOS EN FILTER
-
     let course_data = await courses_table.findOne({_id: new ObjectId(id)}, {projection: {
                                                                             "_id": 0, 
                                                                             "creator_email": 1,
                                                                             "collaborators": 1,
                                                                             "students": 1,
                                                                         }});
-    console.log(course_data);
+    if (course_data === null) {
+        res.send(config.get_status_message("non_existent_course"));
+        return;
+    }
     if (!is_from_course(req.params.email, course_data.creator_email, course_data.collaborators, course_data.students)) {
         res.send(config.get_status_message("not_from_course"));
         return;    
@@ -697,7 +700,7 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
         if (exam.length === 0) {
             res.send(config.get_status_message("non_existent_exam"));
         } else {
-            if (exam[0].mark === -1) { //TODO: CAMBIAR POR LA CONSTANTE DE EXAMEN NO CORREGIDO
+            if (exam[0].mark === NOT_CORRECTED_MARK) {
                 exam[0].mark = "Not graded";
                 exam[0].corrections = undefined;
             }
