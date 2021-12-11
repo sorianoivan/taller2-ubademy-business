@@ -201,11 +201,13 @@ router.post("/create_exam", async (req: Request, res: Response) => {
             let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
                                                         {projection: { 
                                                             "total_exams": 1,
-                                                            //TODO: hay que pedir el creador del curso y el collaborator y usar la funcion que arme arriba de todo
+                                                            "creator_email": 1,
                                                         }});
+            if (req.body.exam_creator_email !== course_doc.creator_email) {
+                res.send(config.get_status_message("not_the_creator")); 
+                return;
+            }
             let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
-
-            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
 
             if (course_doc === null) {
                 res.send(config.get_status_message("course_not_found"));
@@ -242,14 +244,12 @@ router.post("/create_exam", async (req: Request, res: Response) => {
 router.post("/publish_exam", async (req: Request, res: Response) => {
     if (publish_exam_schema(req.body)) {
         try {
-            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
             let proffessors = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
-                _id: 0, 
-                "creator_email": 1,
-                "collaborators": 1,
-            }});
-            if ((req.body.exam_creator_email !== proffessors.creator_email) && (!proffessors.collaborators.includes(req.body.exam_creator_email))) {
-                res.send(config.get_status_message("not_a_proffessor")); 
+                                                                                                        _id: 0, 
+                                                                                                        "creator_email": 1,
+                                                                                                    }});
+            if (req.body.exam_creator_email !== proffessors.creator_email) {
+                res.send(config.get_status_message("not_the_creator")); 
                 return;
             }
 
@@ -286,9 +286,8 @@ router.post("/edit_exam", async (req: Request, res: Response) => {
             let proffessors = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
                                                                                                         _id: 0, 
                                                                                                         "creator_email": 1,
-                                                                                                        "collaborators": 1,
                                                                                                     }});
-            if ((req.body.exam_creator_email !== proffessors.creator_email) && (!proffessors.collaborators.includes(req.body.exam_creator_email))) {
+            if (req.body.exam_creator_email !== proffessors.creator_email) {
                 res.send(config.get_status_message("not_a_proffessor")); 
                 return;
             }
@@ -472,8 +471,6 @@ async function update_course_status(student_email: string, course_id: string): P
 router.post("/grade_exam", async (req: Request, res: Response) => {
     if (grade_exam_schema(req.body)) {
         try {
-            // TODO: VER QUE EL QUE CORRIGE EL EXAMEN SEA DOCENTE O COLABORADOR DEL CURSO            
- 
             let proffessors = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
                                                                                                     _id: 0, 
                                                                                                     "creator_email": 1,
