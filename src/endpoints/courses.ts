@@ -564,20 +564,20 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
         res.send(config.get_status_message("invalid_course_id"));
         return;
     }
-    let course_data = await courses_table.findOne({_id: new ObjectId(id)}, {projection: {
-                                                                                "_id": 0, 
-                                                                                "creator_email": 1,
-                                                                                "collaborators": 1,
-                                                                            }});
-    if (course_data === null) {
-        res.send(config.get_status_message("non_existent_course"));
-        return;
-    }                                                                            
-    if ((course_data.creator_email !== req.params.email) && (!course_data.collaborators.includes(req.params.email))) {
-        res.send(config.get_status_message("not_a_proffessor"));
-        return;
-    }                                                                            
     try {
+        let course_data = await courses_table.findOne({_id: new ObjectId(id)}, {projection: {
+                                                                                    "_id": 0, 
+                                                                                    "creator_email": 1,
+                                                                                    "collaborators": 1,
+                                                                                }});
+        if (course_data === null) {
+            res.send(config.get_status_message("non_existent_course"));
+            return;
+        }                                                                            
+        if ((course_data.creator_email !== req.params.email) && (!course_data.collaborators.includes(req.params.email))) {
+            res.send(config.get_status_message("not_a_proffessor"));
+            return;
+        }                                                                            
         let exams;
 
         if (req.params.filter === "none") {
@@ -645,28 +645,29 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
         res.send(config.get_status_message("invalid_course_id"));
         return;
     }
-    let course_data = await courses_table.findOne({_id: new ObjectId(id)}, {projection: {
-                                                                            "_id": 0, 
-                                                                            "creator_email": 1,
-                                                                            "collaborators": 1,
-                                                                            "students": 1,
-                                                                        }});
-    if (course_data === null) {
-        res.send(config.get_status_message("non_existent_course"));
-        return;
-    }
-    if (!is_from_course(req.params.email, course_data.creator_email, course_data.collaborators, course_data.students)) {
-        res.send(config.get_status_message("not_from_course"));
-        return;    
-    }
-    if (req.params.projection === "completed_exam") {
-        if (course_data.students.includes(req.params.email) && (req.params.email !== req.params.student_email)) {
-            res.send(config.get_status_message("not_your_exam"));
+    
+    try {
+        let course_data = await courses_table.findOne({_id: new ObjectId(id)}, {projection: {
+                                                                                "_id": 0, 
+                                                                                "creator_email": 1,
+                                                                                "collaborators": 1,
+                                                                                "students": 1,
+                                                                            }});
+        if (course_data === null) {
+            res.send(config.get_status_message("non_existent_course"));
             return;
         }
-    }
+        if (!is_from_course(req.params.email, course_data.creator_email, course_data.collaborators, course_data.students)) {
+            res.send(config.get_status_message("not_from_course"));
+            return;    
+        }
+        if (req.params.projection === "completed_exam") {
+            if (course_data.students.includes(req.params.email) && (req.params.email !== req.params.student_email)) {
+                res.send(config.get_status_message("not_your_exam"));
+                return;
+            }
+        }
 
-    try {
         let query: any = [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
                      {"$unwind": {"path": "$exams"}},
                      {"$match": {"$expr": {"$eq":["$exams.exam_name", req.params.exam_name]}}}];
