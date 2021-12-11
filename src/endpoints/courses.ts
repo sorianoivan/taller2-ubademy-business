@@ -275,7 +275,16 @@ router.post("/publish_exam", async (req: Request, res: Response) => {
 router.post("/edit_exam", async (req: Request, res: Response) => {
     if (create_exam_schema(req.body)) {
         try {
-            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE EDITA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
+            let proffessors = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
+                                                                                                        _id: 0, 
+                                                                                                        "creator_email": 1,
+                                                                                                        "collaborators": 1,
+                                                                                                    }});
+            if ((req.body.exam_creator_email !== proffessors.creator_email) && (!proffessors.collaborators.includes(req.body.exam_creator_email))) {
+                res.send(config.get_status_message("not_a_proffessor")); 
+                return;
+            }
+
 
             let existing_exam = await exams_table.aggregate([
                 {"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
@@ -312,7 +321,6 @@ router.post("/edit_exam", async (req: Request, res: Response) => {
 router.post("/complete_exam", async (req: Request, res: Response) => {
     if (complete_exam_schema(req.body)) {
         try {
-            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE COMPLETA EL EXAMEN ES ALUMNO DEL CURSO
             let students = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
                                                                                                         _id: 0, 
                                                                                                         "students": 1
