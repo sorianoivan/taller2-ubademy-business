@@ -75,7 +75,6 @@ const can_see_full_course = (user: any, course: any) =>  {
 
 //Este es para que el creador o los colaboradores vean los datos del curso
 router.get("/data/:id/:email/:privilege", async (req: Request, res: Response) =>  {
-    console.log("id email privilege");
     try{
         let id = req.params.id;
         let email = req.params.email;
@@ -543,7 +542,6 @@ router.get("/:id/students", async (req: Request, res:Response) => {
 
 //filter: none, published_ not_published
 router.get("/exams/:id/:filter", async (req: Request, res:Response) => {
-    console.log("asdasdasdasd estoy en exams");
     console.log(req.params.otro_param);
 
     let id = req.params.id;
