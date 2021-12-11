@@ -74,7 +74,8 @@ const can_see_full_course = (user: any, course: any) =>  {
 }
 
 //Este es para que el creador o los colaboradores vean los datos del curso
-router.get("/:id/:email/:privilege", async (req: Request, res: Response) =>  {
+router.get("/data/:id/:email/:privilege", async (req: Request, res: Response) =>  {
+    console.log("id email privilege");
     try{
         let id = req.params.id;
         let email = req.params.email;
@@ -541,9 +542,9 @@ router.get("/:id/students", async (req: Request, res:Response) => {
 });
 
 //filter: none, published_ not_published
-router.get("/:id/exams/:a_filter", async (req: Request, res:Response) => {
+router.get("/exams/:id/:filter", async (req: Request, res:Response) => {
     console.log("asdasdasdasd estoy en exams");
-
+    console.log(req.params.otro_param);
 
     let id = req.params.id;
     const Id = schema(String); //TODO: SE PODRIA CAMBIAR ESTO A UN SCHEMA QUE CHEQUEE EL LARGO DEL STRING
@@ -556,9 +557,9 @@ router.get("/:id/exams/:a_filter", async (req: Request, res:Response) => {
         {"$unwind": {"path": "$exams"}}
     ];
 
-    if (req.params.a_filter === "published") {
+    if (req.params.filter === "published") {
         query_array.push({"$match": {"$expr": {"$eq": ["$exams.is_published", true]}}});
-    } else if (req.params.a_filter === "not_published") {
+    } else if (req.params.filter === "not_published") {
         query_array.push({"$match": {"$expr": {"$eq": ["$exams.is_published", false]}}});
     }
     query_array.push({"$project": {
