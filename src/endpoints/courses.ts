@@ -313,7 +313,16 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
     if (complete_exam_schema(req.body)) {
         try {
             // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE COMPLETA EL EXAMEN ES ALUMNO DEL CURSO
-            
+            let students = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
+                                                                                                        _id: 0, 
+                                                                                                        "students": 1
+                                                                                                    }});
+
+            if (!students.students.includes(req.body.student_email)) {
+                res.send(config.get_status_message("not_from_course"));
+                return;
+            }
+
             let existing_exam = await exams_table.aggregate(
                         [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
                           {"$unwind": {"path": "$exams"}},
