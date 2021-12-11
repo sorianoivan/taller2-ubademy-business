@@ -449,6 +449,16 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
         try {
             // TODO: VER QUE EL QUE CORRIGE EL EXAMEN SEA DOCENTE O COLABORADOR DEL CURSO            
  
+            let proffessors = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
+                                                                                                    _id: 0, 
+                                                                                                    "creator_email": 1,
+                                                                                                    "collaborators": 1,
+                                                                                                }});
+            if ((req.body.professor_email !== proffessors.creator_email) && (!proffessors.collaborators.includes(req.body.professor_email))) {
+                res.send(config.get_status_message("not_a_proffessor")); 
+                return;
+            }
+
             let find_filter = {_id: new ObjectId(req.body.course_id), "exams": { "$elemMatch": {"exam_name": req.body.exam_name}}};
             let existing_exam = await exams_table.findOne(find_filter, {projection: { _id: 1, "exams.questions.$": 1 }});
             if (existing_exam === null) {
@@ -471,10 +481,6 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                     if (answered_exam.length === 1) {
                         let past_mark = answered_exam[0].mark;
                         if (past_mark === NOT_CORRECTED_MARK) {
-
-                            //TODO: AGREGAR CHEQUEO DE QUE SI EL EXAMEN ESTA APROBADO (req.body.mark) HAY QUE FIJARSE SI EL ALUMNO AL QUE SE CORRIGIO APROBO TODOS LOS EXAMENES,
-                            //SI APROBO TODOS ENTONCES SE GUARDA EN SU PERFIL/OTRO LADO QUE APROBO EL CURSO
-
                             let update_document_query = {"$set": {
                                                                   "exams.$[s].students_exams.$[e].mark": <Number>req.body.mark,
                                                                   "exams.$[s].students_exams.$[e].professors_notes": req.body.corrections,
@@ -488,7 +494,6 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                                 res.status(message["code"]).send(message);
                                 return;
                             }
-
                             res.send(config.get_status_message("exam_graded")); return;
                         } else {
                             res.send(config.get_status_message("exam_already_graded")); return;
