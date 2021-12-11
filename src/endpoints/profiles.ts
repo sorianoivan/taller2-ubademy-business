@@ -22,28 +22,34 @@ const PAYMENTS_BACKEND_URL = process.env.PAYMENTS_BACKEND_URL;
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     try {
-        const user_profile = new UserProfile("", "", req.body.email, "", "Free", [], [], [], []);
-        await profiles_table.insertOne(user_profile);
         //Send request to create wallet to payments backend
-        axios.post(PAYMENTS_BACKEND_URL + "/wallet", {
+        let wallet_created = await axios.post(PAYMENTS_BACKEND_URL + "/wallet", {
             email: req.body.email,
         })
-        .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
+        .then((response:any) => {
             console.log(response.data);
             console.log(response.status);
             if (response.data["status"] !== "ok") {
-                res.send({"status":"error", "message":response.data["message"]});
-                return;
+                return false;
             }
+            return true;
         })
         .catch((error:any) => {
             console.log("Error creating wallet: ", error);
-            res.send({"status":"error", "message":"could not create wallet"});
-            return;
+            return false;
         });
-        res.send(config.get_status_message("profile_created"));
+        if (!wallet_created) {
+            res.send({"status":"error", "message":"Profile creation failed: Could not create wallet"});
+        } else {
+            const user_profile = new UserProfile("", "", req.body.email, "", "Free", [], [], [], []);
+            await profiles_table.insertOne(user_profile);
+            console.log("Profile Created: ", wallet_created);
+            res.send(config.get_status_message("profile_created"));
+        }
+
     } catch (e) {
         let error = <Error>e;
+        console.log("Error:", e);
         if (error.name === "InvalidConstructionParameters") {
             res.send(config.get_status_message("invalid_body"));
         } else if (error.name === "MongoServerError") {
@@ -364,5 +370,39 @@ router.post("/unsubscribe_from_course", async (req: Request, res: Response) => {
         res.send(config.get_status_message("invalid_body"));
     }
 });
+
+
+
+router.get("/my_courses/:user_email", async (req: Request, res: Response) => {
+    let has_private_access = false;
+    if ((req.params.user_email === req.params.profile_email) || (req.params.account_type === "admin")) {
+        has_private_access = true;
+    }
+
+    let user_profile = await profiles_table.findOne({"email": req.params.user_email}, 
+                                      {projection: {
+                                          "collaborator_courses": 1,
+                                          "subscribed_courses": 1,
+                                      }});
+    
+    user_profile.collaborator_courses = user_profile.collaborator_courses.map(function(course_id: string) {
+        return new ObjectId(course_id);
+    });
+    user_profile.subscribed_courses = user_profile.subscribed_courses.map(function(course_id: string) {
+        return new ObjectId(course_id);
+    });
+    let collaborator_courses_names = await courses_table.find({_id: {"$in": user_profile.collaborator_courses}}, {projection: {_id: 1, "creator_email": 1, "title": 1}}).toArray();
+    let subscribed_courses_names = await courses_table.find({_id: {"$in": user_profile.subscribed_courses}}, {projection: {_id: 1, "creator_email": 1, "title": 1}}).toArray();
+
+    let user_courses = await courses_table.find({"creator_email": req.params.user_email},
+                                          {projection: {
+                                              "title": 1,
+                                          }}).toArray();
+    
+    res.send({...config.get_status_message("got_courses"), "collaborator": collaborator_courses_names, "creator": user_courses, "student": subscribed_courses_names});
+});
+
+
+
 
 module.exports = router;

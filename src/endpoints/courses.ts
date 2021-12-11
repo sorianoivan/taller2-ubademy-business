@@ -80,9 +80,18 @@ router.post("/create", async (req: Request, res: Response) => {
     }
 })
 
-router.get("/:id", async (req: Request, res: Response) => {
+const can_see_full_course = (user: any, course: any) =>  {
+    let user_sub = config.get_subscription_types()[user.subscription_type]["price"];
+    let course_required_sub = config.get_subscription_types()[course.subscription_type]["price"];
+    return (user_sub >= course_required_sub && course.students.includes(user.email));
+}
+
+//Este es para que el creador o los colaboradores vean los datos del curso
+router.get("/:id/:email/:privilege", async (req: Request, res: Response) =>  {
     try{
         let id = req.params.id;
+        let email = req.params.email;
+        let privilege = req.params.privilege;
         const Id = schema(String);
         if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
             res.send(config.get_status_message("invalid_course_id"));
@@ -94,16 +103,34 @@ router.get("/:id", async (req: Request, res: Response) => {
             return;
         }
         console.log(my_course);//To debug
-        let response = {"status":"ok", "course":my_course};
-        res.send(response);
+        const user = await profiles_table.findOne({"email": email});
+        if (user == null) {
+            res.send(config.get_status_message("non_existent_user"));
+            return;
+        }
+        console.log(user);//To debug
+        if (user.email === my_course.creator_email || my_course.collaborators.includes(user.email) || privilege === 'admin') {
+            res.send({...config.get_status_message("data_sent"), "course": my_course, "info_level":"full"});//Le mando todo
+        } else if (can_see_full_course(user, my_course)) {//Si esta suscripto y le alcanza la suscripcion
+            let preview_course = my_course;
+            preview_course.collaborators = undefined;
+            preview_course.students = undefined;
+            res.send({...config.get_status_message("data_sent"), "course": preview_course, "info_level":"subscription"});//Todo menos alumnos y colaboradores
+        } else {
+            let preview_course = my_course;
+            preview_course.collaborators = undefined;
+            preview_course.students = undefined;
+            preview_course.videos = undefined;
+            preview_course.images = my_course.images[0];
+            preview_course.total_exams = undefined;
+            res.send({...config.get_status_message("data_sent"), "course": preview_course, "info_level":"basic"});//Mando solo lo basico
+        }
     } catch (err) {
         console.log(err);
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
     }
 });
-
-
 
 function send_filtered_courses(res: Response, filter_document: any, projection_document: any) {
     try{
@@ -137,11 +164,9 @@ router.get("/organized/:course_filter/:subscription_filter", async (req: Request
     let projection: any = {"title": 1, "images": 1, "subscription_type": 1, "course_type": 1};
     if (req.params.course_filter !== "none") {
         filter.course_type = req.params.course_filter;
-        delete projection.course_type;
     }
     if (req.params.subscription_filter !== "none") {
         filter.subscription_type = req.params.subscription_filter;
-        delete projection.subscription_type;
     }
 
     if (Object.keys(filter).length !== 0) {
@@ -840,7 +865,6 @@ router.get("/passing_courses/:user_email", async (req: Request, res: Response) =
         res.status(message["code"]).send(message);
     }
 });
-
 
 
 module.exports = router;
