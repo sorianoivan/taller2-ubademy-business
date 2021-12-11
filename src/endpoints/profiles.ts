@@ -238,6 +238,13 @@ router.get("/subscription_types", (req: Request, res: Response) => {
     });
 });
 
+router.get("/subscription_types_names", (req: Request, res: Response) => {
+    res.send({
+        ...config.get_status_message("data_sent"), 
+        "types": Object.keys(config.get_subscription_types())
+    });
+});
+
 router.get("/:user_email/:account_type/:profile_email", (req: Request, res: Response) => {
 if (!get_profile_schema(req.params)) {
     res.send(config.get_status_message("invalid_args"));
