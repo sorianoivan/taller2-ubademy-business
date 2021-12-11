@@ -72,7 +72,7 @@ const can_see_full_course = (user: any, course: any) =>  {
 }
 
 //Este es para que el creador o los colaboradores vean los datos del curso
-router.get("/:id/:email/:privilege", async (req: Request, res: Response) =>  {
+router.get("/data/:id/:email/:privilege", async (req: Request, res: Response) =>  {
     try{
         let id = req.params.id;
         let email = req.params.email;
@@ -89,12 +89,12 @@ router.get("/:id/:email/:privilege", async (req: Request, res: Response) =>  {
         }
         console.log(my_course);//To debug
         const user = await profiles_table.findOne({"email": email});
-        if (user == null) {
+        if ((user == null) && (privilege !== "admin")) {
             res.send(config.get_status_message("non_existent_user"));
             return;
         }
         console.log(user);//To debug
-        if (user.email === my_course.creator_email || my_course.collaborators.includes(user.email) || privilege === 'admin') {
+        if (privilege === 'admin' || user.email === my_course.creator_email || my_course.collaborators.includes(user.email)) {
             res.send({...config.get_status_message("data_sent"), "course": my_course, "info_level":"full"});//Le mando todo
         } else if (can_see_full_course(user, my_course)) {//Si esta suscripto y le alcanza la suscripcion
             let preview_course = my_course;
@@ -547,7 +547,8 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
 });
 
 
-router.get("/:id/exams", async (req: Request, res:Response) => {
+//filter: none, published_ not_published
+router.get("/exams/:id/:filter/:user_email", async (req: Request, res:Response) => {
     let id = req.params.id;
     const Id = schema(String); //TODO: SE PODRIA CAMBIAR ESTO A UN SCHEMA QUE CHEQUEE EL LARGO DEL STRING
     if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
@@ -555,15 +556,41 @@ router.get("/:id/exams", async (req: Request, res:Response) => {
         return;
     }
     try {
-        let exams = await exams_table.aggregate(
-            [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
-            {"$unwind": {"path": "$exams"}},
-            {"$project": {"_id": 0, "exam_names": "$exams.exam_name"}}]).toArray();
-        let exam_names: string[] = [];
-        exams.forEach((element:any) => {
-            exam_names.push(element.exam_names);
-        });
-        res.send({...config.get_status_message("got_exams_names"), "exams": exam_names});
+        let course = await courses_table.findOne({"_id": new ObjectId(id)}, 
+                                                 {projection: {
+                                                    "creator_email": 1,
+                                                    "collaborators": 1,
+                                                    "students": 1,
+                                                 }});
+
+        if (course === null) {
+            res.send(config.get_status_message("invalid_course_id"));
+            return;
+        }                                                 
+        if (course.students.includes(req.params.user_email)) {
+            req.params.filter = "published";
+        } else if ((req.params.user_email !== course.creator_email) && (!course.collaborators.includes(req.params.user_email))) {
+            res.send(config.get_status_message("not_from_course"));
+            return;
+        }
+        let query_array: any = [
+            {"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
+            {"$unwind": {"path": "$exams"}}
+        ];
+    
+        if (req.params.filter === "published") {
+            query_array.push({"$match": {"$expr": {"$eq": ["$exams.is_published", true]}}});
+        } else if (req.params.filter === "not_published") {
+            query_array.push({"$match": {"$expr": {"$eq": ["$exams.is_published", false]}}});
+        }
+        query_array.push({"$project": {
+                            "_id": 0, 
+                            "exam_name": "$exams.exam_name",
+                            "is_published": "$exams.is_published"
+                        }});
+
+        let exams = await exams_table.aggregate(query_array).toArray();
+        res.send({...config.get_status_message("got_exams_names"), "exams": exams});
     } catch (err) {
         console.log(err);
         let message = config.get_status_message("unexpected_error");
@@ -731,6 +758,8 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
 
 
 router.post("/add_collaborator", async (req: Request, res: Response) => {
+    console.log("Estoy en add collaborator");
+
     if (add_collaborator_schema(req.body)) {
         try {
             let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
@@ -780,6 +809,7 @@ router.post("/add_collaborator", async (req: Request, res: Response) => {
 
 //Returns the emails of the students that completed the received course
 router.get("/:id/students/:user_email/:exam_name", async (req: Request, res: Response) => {
+    console.log("Estoy en students");
     try {
         let existing_course = await courses_table.findOne({_id: new ObjectId(req.params.id)}, 
                 {projection: { "_id": 1, 
