@@ -542,8 +542,6 @@ router.get("/:id/students", async (req: Request, res:Response) => {
 
 //filter: none, published_ not_published
 router.get("/exams/:id/:filter", async (req: Request, res:Response) => {
-    console.log(req.params.otro_param);
-
     let id = req.params.id;
     const Id = schema(String); //TODO: SE PODRIA CAMBIAR ESTO A UN SCHEMA QUE CHEQUEE EL LARGO DEL STRING
     if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
@@ -562,16 +560,11 @@ router.get("/exams/:id/:filter", async (req: Request, res:Response) => {
     }
     query_array.push({"$project": {
                         "_id": 0, 
-                        "exam_names": "$exams.exam_name",
+                        "exam_name": "$exams.exam_name",
                         "is_published": "$exams.is_published"
                     }});
     try {
         let exams = await exams_table.aggregate(query_array).toArray();
-        // let exam_names: string[] = [];
-        // exams.forEach((element:any) => {
-        //     exam_names.push(element.exam_names);
-        // });
-        //res.send({...config.get_status_message("got_exams_names"), "exams": exam_names});
         res.send({...config.get_status_message("got_exams_names"), "exams": exams});
     } catch (err) {
         console.log(err);
