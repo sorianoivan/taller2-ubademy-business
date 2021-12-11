@@ -283,6 +283,7 @@ function can_subscribe(user_subscription: string, course_subscription: string): 
 
 
 router.post("/subscribe_to_course", async (req: Request, res: Response) => {
+    console.log("Estoy en subscribe to course");
     if (subscribe_to_course_schema(req.body)) {
         try {
             let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
@@ -331,6 +332,8 @@ router.post("/subscribe_to_course", async (req: Request, res: Response) => {
 
 
 router.post("/unsubscribe_from_course", async (req: Request, res: Response) => {
+    console.log("Estoy en unsubscribe from course");
+
     if (subscribe_to_course_schema(req.body)) {
         try {
             let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 

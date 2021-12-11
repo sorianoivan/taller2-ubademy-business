@@ -541,7 +541,10 @@ router.get("/:id/students", async (req: Request, res:Response) => {
 });
 
 //filter: none, published_ not_published
-router.get("/:id/exams/:filter", async (req: Request, res:Response) => {
+router.get("/:id/exams/:a_filter", async (req: Request, res:Response) => {
+    console.log("asdasdasdasd estoy en exams");
+
+
     let id = req.params.id;
     const Id = schema(String); //TODO: SE PODRIA CAMBIAR ESTO A UN SCHEMA QUE CHEQUEE EL LARGO DEL STRING
     if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
@@ -553,9 +556,9 @@ router.get("/:id/exams/:filter", async (req: Request, res:Response) => {
         {"$unwind": {"path": "$exams"}}
     ];
 
-    if (req.params.filter === "published") {
+    if (req.params.a_filter === "published") {
         query_array.push({"$match": {"$expr": {"$eq": ["$exams.is_published", true]}}});
-    } else if (req.params.filter === "not_published") {
+    } else if (req.params.a_filter === "not_published") {
         query_array.push({"$match": {"$expr": {"$eq": ["$exams.is_published", false]}}});
     }
     query_array.push({"$project": {
@@ -565,11 +568,12 @@ router.get("/:id/exams/:filter", async (req: Request, res:Response) => {
                     }});
     try {
         let exams = await exams_table.aggregate(query_array).toArray();
-        let exam_names: string[] = [];
-        exams.forEach((element:any) => {
-            exam_names.push(element.exam_names);
-        });
-        res.send({...config.get_status_message("got_exams_names"), "exams": exam_names});
+        // let exam_names: string[] = [];
+        // exams.forEach((element:any) => {
+        //     exam_names.push(element.exam_names);
+        // });
+        //res.send({...config.get_status_message("got_exams_names"), "exams": exam_names});
+        res.send({...config.get_status_message("got_exams_names"), "exams": exams});
     } catch (err) {
         console.log(err);
         let message = config.get_status_message("unexpected_error");
@@ -711,6 +715,8 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
 
 
 router.post("/add_collaborator", async (req: Request, res: Response) => {
+    console.log("Estoy en add collaborator");
+
     if (add_collaborator_schema(req.body)) {
         try {
             let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
@@ -760,6 +766,7 @@ router.post("/add_collaborator", async (req: Request, res: Response) => {
 
 //Returns the emails of the students that completed the received course
 router.get("/:id/students/:user_email/:exam_name", async (req: Request, res: Response) => {
+    console.log("Estoy en students");
     try {
         let existing_course = await courses_table.findOne({_id: new ObjectId(req.params.id)}, 
                 {projection: { "_id": 1, 
