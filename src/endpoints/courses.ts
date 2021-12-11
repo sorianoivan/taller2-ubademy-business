@@ -144,7 +144,7 @@ function send_filtered_courses(res: Response, filter_document: any, projection_d
     }
 }
 
-router.get("/organized/:course_filter/:subscription_filter", async (req: Request, res: Response) => {
+router.get("/organized/:course_filter/:subscription_filter/:is_admin", async (req: Request, res: Response) => {
     let filter: any = {};
     let projection: any = {"title": 1, "images": 1, "subscription_type": 1, "course_type": 1};
     if (req.params.course_filter !== "none") {
@@ -154,7 +154,7 @@ router.get("/organized/:course_filter/:subscription_filter", async (req: Request
         filter.subscription_type = req.params.subscription_filter;
     }
 
-    if (Object.keys(filter).length !== 0) {
+    if ((Object.keys(filter).length !== 0) || (req.params.is_admin === "true")) {
         send_filtered_courses(res, filter, projection);
     } else {
         res.send(config.get_status_message("no_filter"));
