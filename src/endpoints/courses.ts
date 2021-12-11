@@ -91,12 +91,12 @@ router.get("/data/:id/:email/:privilege", async (req: Request, res: Response) =>
         }
         console.log(my_course);//To debug
         const user = await profiles_table.findOne({"email": email});
-        if (user == null) {
+        if ((user == null) && (privilege !== "admin")) {
             res.send(config.get_status_message("non_existent_user"));
             return;
         }
         console.log(user);//To debug
-        if (user.email === my_course.creator_email || my_course.collaborators.includes(user.email) || privilege === 'admin') {
+        if (privilege === 'admin' || user.email === my_course.creator_email || my_course.collaborators.includes(user.email)) {
             res.send({...config.get_status_message("data_sent"), "course": my_course, "info_level":"full"});//Le mando todo
         } else if (can_see_full_course(user, my_course)) {//Si esta suscripto y le alcanza la suscripcion
             let preview_course = my_course;
