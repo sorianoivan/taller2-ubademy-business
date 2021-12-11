@@ -20,8 +20,6 @@ import { Exam } from "../models/exam"
 import { CompletedExam } from "../models/completed_exam";
 
 
-
-
 let router = express.Router();
 
 const MONGO_SHORT_ID_LEN = 12;
@@ -45,7 +43,7 @@ router.post("/create", async (req: Request, res: Response) => {
 
         //TODO: TAL VEZ NO HACE FALTA HACER ESTE FIND PORQUE INSERT YA TE DEVUELVE EL ID, SE PUEDE CAMBIAR
         let found_course = await courses_table.findOne({creator_email: course.creator_email, title: course.title}, {projection: {_id: 1}});
-        if (found_course === undefined) {
+        if (found_course === null) {
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
             return;
@@ -125,7 +123,7 @@ function send_filtered_courses(res: Response, filter_document: any, projection_d
         if (err) {
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
-        } else if (result === undefined) {
+        } else if (result === null) {
             res.send(config.get_status_message("non_existent_filter"));
         } else {
             let courses: any = <Array<Document>>result;
@@ -210,14 +208,20 @@ router.put("/update", async (req: Request, res: Response) => {
 router.post("/create_exam", async (req: Request, res: Response) => {
     if (create_exam_schema(req.body) && (req.body.questions.length !== 0)) {
         try {
-            let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "total_exams": 1 }});
+            let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
+                                                        {projection: { 
+                                                            "total_exams": 1,
+                                                            "creator_email": 1,
+                                                        }});
+            if (req.body.exam_creator_email !== course_doc.creator_email) {
+                res.send(config.get_status_message("not_the_creator")); 
+                return;
+            }
             let exams_doc = await exams_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { "exams_amount": 1 }});
 
-            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
-
-            if (course_doc === undefined) {
+            if (course_doc === null) {
                 res.send(config.get_status_message("course_not_found"));
-            } else if (exams_doc === undefined) {
+            } else if (exams_doc === null) {
                 let message = config.get_status_message("no_exam_doc_for_course");
                 res.status(message["code"]).send(message);
             } else {
@@ -250,9 +254,15 @@ router.post("/create_exam", async (req: Request, res: Response) => {
 router.post("/publish_exam", async (req: Request, res: Response) => {
     if (publish_exam_schema(req.body)) {
         try {
-            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE CREA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
+            let proffessors = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
+                                                                                                        _id: 0, 
+                                                                                                        "creator_email": 1,
+                                                                                                    }});
+            if (req.body.exam_creator_email !== proffessors.creator_email) {
+                res.send(config.get_status_message("not_the_creator")); 
+                return;
+            }
 
-            //let existing_exam = await exams_table.findOne({_id: new ObjectId(req.body.course_id), "exams.exam_name": req.body.exam_name}, {projection: { _id: 1 }});
             let existing_exam = await exams_table.aggregate([
                 {"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
                 {"$unwind": {"path": "$exams"}},
@@ -283,7 +293,15 @@ router.post("/publish_exam", async (req: Request, res: Response) => {
 router.post("/edit_exam", async (req: Request, res: Response) => {
     if (create_exam_schema(req.body)) {
         try {
-            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE EDITA EL CURSO ES PROFESOR O COLABORADOR DEL CURSO
+            let proffessors = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
+                                                                                                        _id: 0, 
+                                                                                                        "creator_email": 1,
+                                                                                                    }});
+            if (req.body.exam_creator_email !== proffessors.creator_email) {
+                res.send(config.get_status_message("not_a_proffessor")); 
+                return;
+            }
+
 
             let existing_exam = await exams_table.aggregate([
                 {"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
@@ -320,8 +338,16 @@ router.post("/edit_exam", async (req: Request, res: Response) => {
 router.post("/complete_exam", async (req: Request, res: Response) => {
     if (complete_exam_schema(req.body)) {
         try {
-            // TODO: AGREGAR LOGICA DE CHEQUEO DE QUE EL USUARIO QUE COMPLETA EL EXAMEN ES ALUMNO DEL CURSO
-            
+            let students = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
+                                                                                                        _id: 0, 
+                                                                                                        "students": 1
+                                                                                                    }});
+
+            if (!students.students.includes(req.body.student_email)) {
+                res.send(config.get_status_message("not_from_course"));
+                return;
+            }
+
             let existing_exam = await exams_table.aggregate(
                         [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
                           {"$unwind": {"path": "$exams"}},
@@ -336,11 +362,6 @@ router.post("/complete_exam", async (req: Request, res: Response) => {
             } else if (existing_exam.length === 1) {
                 let questions = existing_exam[0].questions;
                 if (questions.length === req.body.answers.length) {
-                    let answered_exam_query = {_id: new ObjectId(req.body.course_id),
-                        "exams": { "$elemMatch": {"exam_name": req.body.exam_name,
-                        "students_exams": {"$elemMatch": {"student_email": req.body.student_email}}}}};
-
-                    //TODO: VER SI PUEDO VOLAR ESTA QUERY, DEBERIA PODER PEDIR TODO SOLO CON LA DE ARRIBA   
                     let answered_exam = await exams_table.aggregate(
                         [{"$match": {"$expr": {"$eq": ["$_id", new ObjectId(req.body.course_id)]}}},
                           {"$unwind": {"path": "$exams"}},
@@ -455,8 +476,16 @@ async function update_course_status(student_email: string, course_id: string): P
 router.post("/grade_exam", async (req: Request, res: Response) => {
     if (grade_exam_schema(req.body)) {
         try {
-            // TODO: VER QUE EL QUE CORRIGE EL EXAMEN SEA DOCENTE O COLABORADOR DEL CURSO            
- 
+            let proffessors = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, {projection: { 
+                                                                                                    _id: 0, 
+                                                                                                    "creator_email": 1,
+                                                                                                    "collaborators": 1,
+                                                                                                }});
+            if ((req.body.professor_email !== proffessors.creator_email) && (!proffessors.collaborators.includes(req.body.professor_email))) {
+                res.send(config.get_status_message("not_a_proffessor")); 
+                return;
+            }
+
             let find_filter = {_id: new ObjectId(req.body.course_id), "exams": { "$elemMatch": {"exam_name": req.body.exam_name}}};
             let existing_exam = await exams_table.findOne(find_filter, {projection: { _id: 1, "exams.questions.$": 1 }});
             if (existing_exam === null) {
@@ -479,10 +508,6 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                     if (answered_exam.length === 1) {
                         let past_mark = answered_exam[0].mark;
                         if (past_mark === NOT_CORRECTED_MARK) {
-
-                            //TODO: AGREGAR CHEQUEO DE QUE SI EL EXAMEN ESTA APROBADO (req.body.mark) HAY QUE FIJARSE SI EL ALUMNO AL QUE SE CORRIGIO APROBO TODOS LOS EXAMENES,
-                            //SI APROBO TODOS ENTONCES SE GUARDA EN SU PERFIL/OTRO LADO QUE APROBO EL CURSO
-
                             let update_document_query = {"$set": {
                                                                   "exams.$[s].students_exams.$[e].mark": <Number>req.body.mark,
                                                                   "exams.$[s].students_exams.$[e].professors_notes": req.body.corrections,
@@ -496,7 +521,6 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
                                 res.status(message["code"]).send(message);
                                 return;
                             }
-
                             res.send(config.get_status_message("exam_graded")); return;
                         } else {
                             res.send(config.get_status_message("exam_already_graded")); return;
@@ -522,23 +546,6 @@ router.post("/grade_exam", async (req: Request, res: Response) => {
     }
 });
 
-router.get("/:id/students", async (req: Request, res:Response) => {
-    let id = req.params.id;
-    const Id = schema(String);
-    if (!Id(id) || (id.length != MONGO_SHORT_ID_LEN && id.length != MONGO_LONG_ID_LEN)) {
-        res.send(config.get_status_message("invalid_course_id"));
-        return;
-    }
-    const course = await courses_table.findOne({_id: new ObjectId(id)})
-    if (!course) {
-        res.send(config.get_status_message("inexistent_course"));
-        return;
-    }
-    res.send({
-       "status": "ok",
-       "students": course.students
-    });
-});
 
 router.get("/:id/exams", async (req: Request, res:Response) => {
     let id = req.params.id;
@@ -572,11 +579,20 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
         res.send(config.get_status_message("invalid_course_id"));
         return;
     }
-
-    //TODO: AGREGAR CHEQUEO DE QUE EL MAIL ES DEL CREADOR O DE UN COLABORADOR
-    //TODO: PROBAR BIEN QUE ESTO ANDE CUANDO SE MERGEE 
-
     try {
+        let course_data = await courses_table.findOne({_id: new ObjectId(id)}, {projection: {
+                                                                                    "_id": 0, 
+                                                                                    "creator_email": 1,
+                                                                                    "collaborators": 1,
+                                                                                }});
+        if (course_data === null) {
+            res.send(config.get_status_message("non_existent_course"));
+            return;
+        }                                                                            
+        if ((course_data.creator_email !== req.params.email) && (!course_data.collaborators.includes(req.params.email))) {
+            res.send(config.get_status_message("not_a_proffessor"));
+            return;
+        }                                                                            
         let exams;
 
         if (req.params.filter === "none") {
@@ -591,7 +607,7 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
                     "status": "$exams.students_exams.mark"
                 }}]).toArray();
             exams.forEach((element:any) => {
-                if (element.status === -1) {
+                if (element.status === NOT_CORRECTED_MARK) {
                     element.status = "Not graded";
                 } else {
                     element.status = "Graded";
@@ -602,7 +618,7 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
                 [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
                 {"$unwind": {"path": "$exams"}},
                 {"$unwind": {"path": "$exams.students_exams"}},
-                {"$match": {"$expr": {"$ne":["$exams.students_exams.mark", -1]}}}, //TODO: CAMBIAR POR LA CONSTANTE DE NOT CORRECTED CUANDO MERGEEMOS
+                {"$match": {"$expr": {"$ne":["$exams.students_exams.mark", NOT_CORRECTED_MARK]}}},
                 {"$project": {
                     "_id": 0, 
                     "exam_name": "$exams.exam_name",
@@ -613,7 +629,7 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
                 [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
                 {"$unwind": {"path": "$exams"}},
                 {"$unwind": {"path": "$exams.students_exams"}},
-                {"$match": {"$expr": {"$eq":["$exams.students_exams.mark", -1]}}}, //TODO: CAMBIAR POR LA CONSTANTE DE NOT CORRECTED CUANDO MERGEEMOS
+                {"$match": {"$expr": {"$eq":["$exams.students_exams.mark", NOT_CORRECTED_MARK]}}},
                 {"$project": {
                     "_id": 0, 
                     "exam_name": "$exams.exam_name",
@@ -632,6 +648,10 @@ router.get("/:id/students_exams/:email/:filter", async (req: Request, res:Respon
 });
 
 
+function is_from_course(user: string, creator_email: string, collaborators: string, students: string): boolean {
+    return (user === creator_email) || (collaborators.includes(user)) || (students.includes(user));
+}
+
 //projection: questions or completed_exam
 router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req: Request, res:Response) => {
     let id = req.params.id;
@@ -640,16 +660,29 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
         res.send(config.get_status_message("invalid_course_id"));
         return;
     }
-
-    //TODO: AGREGAR CHEQUEO DE QUE EL MAIL email ES DEL CREADOR O DE UN COLABORADOR, O DE ALGUIEN INSCRIPTO AL CURSO
-    //TODO: PROBAR BIEN QUE ESTO ANDE CUANDO SE MERGEE 
-
-    //SI email ES DEL CREADOR O DE UN COLABORADOR ENTONCES PUEDE VER CUALQUIER EXAMEN, SINO SOLO PUEDE VER EL SUYO,
-    //SI PROJECTION ES QUESTIONS ENTONCES student_email TIENE QUE SER none
-
-    //TODO: AGREGAR SCHEMA Q CHEQUEE LO Q RECIBIMOS EN FILTER
-
+    
     try {
+        let course_data = await courses_table.findOne({_id: new ObjectId(id)}, {projection: {
+                                                                                "_id": 0, 
+                                                                                "creator_email": 1,
+                                                                                "collaborators": 1,
+                                                                                "students": 1,
+                                                                            }});
+        if (course_data === null) {
+            res.send(config.get_status_message("non_existent_course"));
+            return;
+        }
+        if (!is_from_course(req.params.email, course_data.creator_email, course_data.collaborators, course_data.students)) {
+            res.send(config.get_status_message("not_from_course"));
+            return;    
+        }
+        if (req.params.projection === "completed_exam") {
+            if (course_data.students.includes(req.params.email) && (req.params.email !== req.params.student_email)) {
+                res.send(config.get_status_message("not_your_exam"));
+                return;
+            }
+        }
+
         let query: any = [{"$match": {"$expr": {"$eq":["$_id", new ObjectId(id)]}}},
                      {"$unwind": {"path": "$exams"}},
                      {"$match": {"$expr": {"$eq":["$exams.exam_name", req.params.exam_name]}}}];
@@ -683,7 +716,7 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
         if (exam.length === 0) {
             res.send(config.get_status_message("non_existent_exam"));
         } else {
-            if (exam[0].mark === -1) { //TODO: CAMBIAR POR LA CONSTANTE DE EXAMEN NO CORREGIDO
+            if (exam[0].mark === NOT_CORRECTED_MARK) {
                 exam[0].mark = "Not graded";
                 exam[0].corrections = undefined;
             }
@@ -797,7 +830,6 @@ router.get("/:id/students/:user_email/:exam_name", async (req: Request, res: Res
 router.get("/passing_courses/:user_email", async (req: Request, res: Response) => {
     try {
         let passed_courses = await profiles_table.findOne({email: req.params.user_email}, {projection: {_id: 0, "passed_courses": 1}});
-        console.log(passed_courses);
         if (passed_courses === null) {
             res.send(config.get_status_message("non_existent_user"));
             return;
