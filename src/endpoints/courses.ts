@@ -15,6 +15,7 @@ import { publish_exam_schema } from "../lone_schemas/publish_exam"
 import { complete_exam_schema } from "../lone_schemas/complete_exam"
 import { grade_exam_schema } from "../lone_schemas/grade_exam"
 import { add_collaborator_schema } from "../lone_schemas/add_collaborator"
+import { grade_course_schema } from "../lone_schemas/grade_course"
 import { business_db, courses_table, exams_table, profiles_table } from "../index"
 import { Exam } from "../models/exam"
 import { CompletedExam } from "../models/completed_exam";
@@ -873,6 +874,32 @@ router.get("/passing_courses/:user_email", async (req: Request, res: Response) =
         console.log(err);
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
+    }
+});
+
+
+router.post("/grade_course", async (req: Request, res: Response) => {
+    if (grade_course_schema(req.body)) {
+        try {
+            let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.id)}, 
+                {projection: { "_id": 0, 
+                "students": 1,
+             }});
+            if (existing_course === null) {
+                res.send(config.get_status_message("non_existent_course"));
+                return;
+            }
+            if (!existing_course.students.includes(req.body.user_email)) {
+                res.send(config.get_status_message("not_from_course"));
+                return;
+            }
+        } catch (err) {
+            console.log(err);
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
     }
 });
 
