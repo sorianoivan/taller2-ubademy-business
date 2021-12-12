@@ -217,6 +217,8 @@ router.post("/pay_subscription", async (req: Request, res: Response) => {
     }
 });
 
+const MONTH_IN_MILLISECONDS = 2592000000;
+
 router.use(body_parser.json());
 router.post("/validate_subscription", async (req: Request, res: Response) => {
     try {
@@ -247,7 +249,7 @@ router.post("/validate_subscription", async (req: Request, res: Response) => {
             console.log("DATE: ", date);
             let time_passed = date.getTime() - last_deposit.getTime();//In milliseconds
             console.log("TIME PASSED: ", time_passed);
-            if (time_passed >= 2592000000) {//One month in ms. Chequearlo o buscar una forma de no hardcodearlo
+            if (time_passed >= MONTH_IN_MILLISECONDS) {//One month in ms.
                 if (user_profile.subscription_type !== "Free") {
                     let amount_to_pay = config.general_data["subscriptions"][user_profile.subscription_type]["price"];
                     console.log("Trying to pay: ", amount_to_pay);
@@ -256,20 +258,19 @@ router.post("/validate_subscription", async (req: Request, res: Response) => {
                         amountInEthers: amount_to_pay.toString(),
                         newSubscription: user_profile.subscription_type
                     })
-                    .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
+                    .then((response:any) => {
                         console.log("DEPOSIT RESPONSE: ", response.data);
                         if (response.data["status"] === "ok") {
                             res.send({"status":"ok", "message":"transaction is beign processed"})//Si falla le va a poner la sub en free
                         } else {
-                            let update_response = update_subscription(user_profile.email, "Free");
-                            console.log("UPDATE RESPONSE: ", update_response);
+                            update_subscription(user_profile.email, "Free");
                             res.send({"status":"error", "message":"Could not pay. Changing suscription to Free"})
                         }
                     })
                     .catch((error:any) => {
-                        console.log(error);
-                        res.send( {"status":"error", "message":error});
-                        //Ver si aca pongo el update subscription a free. Creo que si tiene q ir
+                        console.log("Error in deposit request: ", error);
+                        update_subscription(user_profile.email, "Free");
+                        res.send({"status":"error", "message":"Could not pay. Changing suscription to Free"})
                     });
                 } else {
                     res.send({"status":"ok", "message":"Free subscription doesnt need payments"});
