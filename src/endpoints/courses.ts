@@ -886,6 +886,7 @@ router.post("/grade_course", async (req: Request, res: Response) => {
             let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.id)}, 
                 {projection: { "_id": 0, 
                 "students": 1,
+                "students_grading": 1,
              }});
             if (existing_course === null) {
                 res.send(config.get_status_message("non_existent_course"));
@@ -895,6 +896,15 @@ router.post("/grade_course", async (req: Request, res: Response) => {
                 res.send(config.get_status_message("not_from_course"));
                 return;
             }
+            let has_already_commented = false;
+            if (!existing_course) {
+
+            } else {
+
+            }
+            const update = { "$set": new_course };
+            const options = { "upsert": false };
+            let { matchedCount, modifiedCount } = await courses_table.updateOne(course_to_update, update, options);
         } catch (err) {
             console.log(err);
             let message = config.get_status_message("unexpected_error");
