@@ -37,6 +37,7 @@ router.post("/create", async (req: Request, res: Response) => {
     try {
         req.body.collaborators = [];
         req.body.students = [];
+        req.body.students_grading = [];
         let course: Course = new Course(req.body);
         console.log(course);//To debug
         await courses_table.insertOne(course);
@@ -167,6 +168,7 @@ router.put("/update", async (req: Request, res: Response) => {
         let new_course: Course = new Course(req.body);
         delete new_course.collaborators;
         delete new_course.students;
+        delete new_course.students_grading;
         console.log(new_course);//To debug
 
         const Id = schema(String)

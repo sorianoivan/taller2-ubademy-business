@@ -1,6 +1,7 @@
 const schema = require('js-schema');
 import { InvalidConstructionParameters } from "./invalid_construction_parameters";
 import { config } from "../configuration/config";
+import { CourseGrading } from "./course_grading"
 
 interface Video {
     name: string;
@@ -39,6 +40,7 @@ export class Course {
     subscription_type: string;
     collaborators: string[] | undefined;
     students: string[] | undefined;
+    students_grading: CourseGrading[] | undefined;
 
 
     constructor(course_data: any) {
@@ -57,6 +59,7 @@ export class Course {
         this.subscription_type = course_data.subscription_type;
         this.collaborators = course_data.collaborators;
         this.students = course_data.students;
+        this.students_grading = course_data.students_grading;
     }
 
     validate_course_data(course_data: any) {
