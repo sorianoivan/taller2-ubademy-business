@@ -106,7 +106,7 @@ router.get("/data/:id/:email/:privilege", async (req: Request, res: Response) =>
             preview_course.collaborators = undefined;
             preview_course.students = undefined;
             preview_course.videos = undefined;
-            preview_course.images = my_course.images[0];
+            preview_course.images = [my_course.images[0]];
             preview_course.total_exams = undefined;
             res.send({...config.get_status_message("data_sent"), "course": preview_course, "info_level":"basic"});//Mando solo lo basico
         }
