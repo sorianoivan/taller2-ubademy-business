@@ -17,7 +17,7 @@ let profiles = require("./endpoints/profiles");
 
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
 // The string is from the test db
-const url = process.env.MONGODB_URL;
+export const url = process.env.MONGODB_URL || "mongodb://mongodb_business:27017";
 
 const MONGO_SHORT_ID_LEN = 12
 const MONGO_LONG_ID_LEN = 24

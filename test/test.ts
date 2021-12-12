@@ -11,8 +11,25 @@ describe('Pinger', () =>
     });
 });
 
+import express, { Application, Request, Response } from "express";
+import schema from "js-schema";
+import { Db, MongoAPIError, ObjectId } from "mongodb";
+//import * as mongoDB from "mongodb";
+import { UserProfile } from "../src/models/user_profile";
+import { config } from "../src/configuration/config"
+import { InvalidConstructionParameters } from "../src/models/invalid_construction_parameters";
+import e from "express";
+const body_parser = require('body-parser');
+const mongo = require("mongodb")
+import { get_profile_schema } from "../src/lone_schemas/get_profile"
+let courses = require("../src/endpoints/courses");
+let profiles = require("../src/endpoints/profiles");
+
+
+
+
 import request from "supertest";
-import {create_server, connect_to_database} from "../src/server";
+import {create_server, connect_to_database, url} from "../src/server";
 import {Course} from "../src/models/course"
 
 let mongo_client = connect_to_database();
