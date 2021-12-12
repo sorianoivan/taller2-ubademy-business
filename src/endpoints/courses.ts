@@ -19,6 +19,7 @@ import { grade_course_schema } from "../lone_schemas/grade_course"
 import { business_db, courses_table, exams_table, profiles_table } from "../index"
 import { Exam } from "../models/exam"
 import { CompletedExam } from "../models/completed_exam";
+import { CourseGrading } from "../models/course_grading";
 
 
 let router = express.Router();
@@ -883,7 +884,7 @@ router.get("/passing_courses/:user_email", async (req: Request, res: Response) =
 router.post("/grade_course", async (req: Request, res: Response) => {
     if (grade_course_schema(req.body)) {
         try {
-            let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.id)}, 
+            let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
                 {projection: { "_id": 0, 
                 "students": 1,
                 "students_grading": 1,
@@ -897,14 +898,22 @@ router.post("/grade_course", async (req: Request, res: Response) => {
                 return;
             }
             let has_already_commented = false;
-            if (!existing_course) {
-
+            existing_course.students_grading.forEach((grading: CourseGrading) => {
+                if (grading.student_email === req.body.user_email) {
+                    has_already_commented = true;
+                }
+            });
+            if (!has_already_commented) {
+                existing_course.students_grading.push(new CourseGrading(req.body.user_email, req.body.comment, req.body.grade))
+                const update = { "$set": {"students_grading": existing_course.students_grading} };
+                const options = { "upsert": false };
+                await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, update, options);
+                res.send(config.get_status_message("comment_inserted"));
+                return;
             } else {
-
+                res.send(config.get_status_message("user_already_commented"));
+                return;
             }
-            const update = { "$set": new_course };
-            const options = { "upsert": false };
-            let { matchedCount, modifiedCount } = await courses_table.updateOne(course_to_update, update, options);
         } catch (err) {
             console.log(err);
             let message = config.get_status_message("unexpected_error");
