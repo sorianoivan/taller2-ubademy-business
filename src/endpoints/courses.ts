@@ -925,7 +925,7 @@ router.post("/grade_course", async (req: Request, res: Response) => {
 
 
 //Returns the gradings that the students gave the course
-router.get("/student_gradings", async (req: Request, res: Response) => {
+router.get("/student_gradings/:id", async (req: Request, res: Response) => {
     try {
         let existing_course = await courses_table.findOne({_id: new ObjectId(req.params.id)}, 
                 {projection: { "_id": 0, 
