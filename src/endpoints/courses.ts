@@ -813,7 +813,6 @@ router.post("/add_collaborator", async (req: Request, res: Response) => {
 
 //Returns the emails of the students that completed the received course
 router.get("/:id/students/:user_email/:exam_name", async (req: Request, res: Response) => {
-    console.log("Estoy en students");
     try {
         let existing_course = await courses_table.findOne({_id: new ObjectId(req.params.id)}, 
                 {projection: { "_id": 1, 
@@ -924,5 +923,34 @@ router.post("/grade_course", async (req: Request, res: Response) => {
     }
 });
 
+
+//Returns the gradings that the students gave the course
+router.get("/student_gradings", async (req: Request, res: Response) => {
+    try {
+        let existing_course = await courses_table.findOne({_id: new ObjectId(req.params.id)}, 
+                {projection: { "_id": 0, 
+                "students_grading": 1,
+             }});
+        if (existing_course === null) {
+            res.send(config.get_status_message("non_existent_course"));
+            return;
+        }
+        let gradings_cum_sum = 0;
+        existing_course.students_grading.forEach((grading: any) => {
+            gradings_cum_sum += grading.grade;
+        });
+        if (existing_course.students_grading.length != 0) {
+            let course_average = gradings_cum_sum / existing_course.students_grading.array.length;
+            res.send({...config.get_status_message("data_sent"), "gradings": existing_course.students_grading, "average": course_average});
+            return;
+        }
+        res.send({...config.get_status_message("data_sent"), "gradings": existing_course.students_grading});
+        return;
+    } catch (err) {
+        console.log(err);
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
+    }
+});
 
 module.exports = router;
