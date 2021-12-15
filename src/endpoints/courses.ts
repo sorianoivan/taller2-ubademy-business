@@ -939,7 +939,6 @@ router.get("/student_gradings/:id", async (req: Request, res: Response) => {
         existing_course.students_grading.forEach((grading: any) => {
             gradings_cum_sum += grading.grade;
         });
-        console.log(existing_course.students_grading);
         if (existing_course.students_grading.length != 0) {
             let course_average = gradings_cum_sum / existing_course.students_grading.length;
             res.send({...config.get_status_message("data_sent"), "gradings": existing_course.students_grading, "average": course_average});
