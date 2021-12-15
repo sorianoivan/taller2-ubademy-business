@@ -66,10 +66,11 @@ router.use(body_parser.json());
 router.post("/update", async (req: Request, res: Response) => {
     try {
         const user_profile = new UserProfile(req.body.name, req.body.profile_picture, req.body.email, 
-                                            req.body.country, req.body.subscription_type, req.body.interesting_genres, [], [], []);
+                                            req.body.country, "Free", req.body.interesting_genres, [], [], []); // Free because of the schema
         delete user_profile.collaborator_courses; //Hack to prevent collaborator courses reset
         delete user_profile.subscribed_courses; //Hack to prevent subsribed courses reset
         delete user_profile.passed_courses; //Hack to prevent passed courses reset
+        delete user_profile.subscription_type; //Hack to prevent subscription type change without paying
         const query = { "email": req.body.email };
         const update = { "$set": user_profile };
         const options = { "upsert": false };

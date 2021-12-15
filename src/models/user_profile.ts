@@ -20,7 +20,7 @@ export class UserProfile {
     profile_picture_link: string;
     email: string;
     country: string;
-    subscription_type: string;
+    subscription_type: string | undefined;
     interesting_genres: string[];
     collaborator_courses: string[] | undefined;
     subscribed_courses: string[] | undefined;
