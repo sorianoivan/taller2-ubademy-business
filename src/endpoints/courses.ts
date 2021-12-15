@@ -15,9 +15,11 @@ import { publish_exam_schema } from "../lone_schemas/publish_exam"
 import { complete_exam_schema } from "../lone_schemas/complete_exam"
 import { grade_exam_schema } from "../lone_schemas/grade_exam"
 import { add_collaborator_schema } from "../lone_schemas/add_collaborator"
+import { grade_course_schema } from "../lone_schemas/grade_course"
 import { business_db, courses_table, exams_table, profiles_table } from "../index"
 import { Exam } from "../models/exam"
 import { CompletedExam } from "../models/completed_exam";
+import { CourseGrading } from "../models/course_grading";
 
 
 let router = express.Router();
@@ -36,6 +38,7 @@ router.post("/create", async (req: Request, res: Response) => {
     try {
         req.body.collaborators = [];
         req.body.students = [];
+        req.body.students_grading = [];
         let course: Course = new Course(req.body);
         console.log(course);//To debug
         await courses_table.insertOne(course);
@@ -166,6 +169,7 @@ router.put("/update", async (req: Request, res: Response) => {
         let new_course: Course = new Course(req.body);
         delete new_course.collaborators;
         delete new_course.students;
+        delete new_course.students_grading;
         console.log(new_course);//To debug
 
         const Id = schema(String)
@@ -809,7 +813,6 @@ router.post("/add_collaborator", async (req: Request, res: Response) => {
 
 //Returns the emails of the students that completed the received course
 router.get("/:id/students/:user_email/:exam_name", async (req: Request, res: Response) => {
-    console.log("Estoy en students");
     try {
         let existing_course = await courses_table.findOne({_id: new ObjectId(req.params.id)}, 
                 {projection: { "_id": 1, 
@@ -876,5 +879,78 @@ router.get("/passing_courses/:user_email", async (req: Request, res: Response) =
     }
 });
 
+
+router.post("/grade_course", async (req: Request, res: Response) => {
+    if (grade_course_schema(req.body)) {
+        try {
+            let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
+                {projection: { "_id": 0, 
+                "students": 1,
+                "students_grading": 1,
+             }});
+            if (existing_course === null) {
+                res.send(config.get_status_message("non_existent_course"));
+                return;
+            }
+            if (!existing_course.students.includes(req.body.user_email)) {
+                res.send(config.get_status_message("not_from_course"));
+                return;
+            }
+            let has_already_commented = false;
+            existing_course.students_grading.forEach((grading: CourseGrading) => {
+                if (grading.student_email === req.body.user_email) {
+                    has_already_commented = true;
+                }
+            });
+            if (!has_already_commented) {
+                existing_course.students_grading.push(new CourseGrading(req.body.user_email, req.body.comment, req.body.grade))
+                const update = { "$set": {"students_grading": existing_course.students_grading} };
+                const options = { "upsert": false };
+                await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, update, options);
+                res.send(config.get_status_message("comment_inserted"));
+                return;
+            } else {
+                res.send(config.get_status_message("user_already_commented"));
+                return;
+            }
+        } catch (err) {
+            console.log(err);
+            let message = config.get_status_message("unexpected_error");
+            res.status(message["code"]).send(message);
+        }
+    } else {
+        res.send(config.get_status_message("invalid_body"));
+    }
+});
+
+
+//Returns the gradings that the students gave the course
+router.get("/student_gradings/:id", async (req: Request, res: Response) => {
+    try {
+        let existing_course = await courses_table.findOne({_id: new ObjectId(req.params.id)}, 
+                {projection: { "_id": 0, 
+                "students_grading": 1,
+             }});
+        if (existing_course === null) {
+            res.send(config.get_status_message("non_existent_course"));
+            return;
+        }
+        let gradings_cum_sum = 0;
+        existing_course.students_grading.forEach((grading: any) => {
+            gradings_cum_sum += grading.grade;
+        });
+        if (existing_course.students_grading.length != 0) {
+            let course_average = gradings_cum_sum / existing_course.students_grading.length;
+            res.send({...config.get_status_message("data_sent"), "gradings": existing_course.students_grading, "average": course_average});
+            return;
+        }
+        res.send({...config.get_status_message("data_sent"), "gradings": existing_course.students_grading});
+        return;
+    } catch (err) {
+        console.log(err);
+        let message = config.get_status_message("unexpected_error");
+        res.status(message["code"]).send(message);
+    }
+});
 
 module.exports = router;
