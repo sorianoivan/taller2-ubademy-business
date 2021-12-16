@@ -324,7 +324,7 @@ if (!get_profile_schema(req.params)) {
     if ((req.params.user_email === req.params.profile_email) || (req.params.account_type === "admin")) {
     has_private_access = true;
     }
-    profiles_table.find({"email": req.params.profile_email}).toArray(function(err: any, result: any) {
+    profiles_table.find({"email": req.params.profile_email}).toArray(async function(err: any, result: any) {
     if (err) {
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
@@ -343,6 +343,21 @@ if (!get_profile_schema(req.params)) {
             });
         } else {
             document_to_send = document;
+            console.log("DOC: ", document);
+            await axios.get(PAYMENTS_BACKEND_URL + `/wallet/${document.email}`)
+            .then((response:any) => {
+                console.log("RESPONSE: ", response.data);
+                if (response.data["status"] === "error") {
+                    console.log("Error getting wallet info");
+                    document_to_send = {...document_to_send, "wallet_data":{"address":undefined, "balance":undefined}};
+                } else {
+                    document_to_send = {...document_to_send, "wallet_data":{"address":response.data.address, "balance":response.data.balance}};
+                }
+            })
+            .catch((error:any) => {
+                console.log("Error in get wallet data: ", error);
+                document_to_send = {...document_to_send, "wallet_data":{"address":undefined, "balance":undefined}};
+            });
         }
         res.send({
         ...config.get_status_message("data_sent"),
