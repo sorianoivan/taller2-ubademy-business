@@ -316,7 +316,7 @@ router.get("/subscription_types_names", (req: Request, res: Response) => {
     });
 });
 
-router.get("/:user_email/:account_type/:profile_email", (req: Request, res: Response) => {
+router.get("/:user_email/:account_type/:profile_email", async (req: Request, res: Response) => {
 if (!get_profile_schema(req.params)) {
     res.send(config.get_status_message("invalid_args"));
 } else {
@@ -324,7 +324,7 @@ if (!get_profile_schema(req.params)) {
     if ((req.params.user_email === req.params.profile_email) || (req.params.account_type === "admin")) {
     has_private_access = true;
     }
-    profiles_table.find({"email": req.params.profile_email}).toArray(async function(err: any, result: any) {
+    await profiles_table.find({"email": req.params.profile_email}).toArray(async function(err: any, result: any) {
     if (err) {
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
