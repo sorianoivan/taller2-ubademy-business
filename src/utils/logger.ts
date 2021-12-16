@@ -1,4 +1,14 @@
 import { NewrelicLogger } from "./newrelic_logger"
+const winston = require('winston');
+
+const winstonLogger = winston.createLogger({
+  defaultMeta: { service: 'user-service' },
+  levels: winston.config.npm.levels,
+  transports: [
+    new (winston.transports.Console)({ level: 'debug' }),
+    new (winston.transports.File)({ filename: 'logs.log', level: 'debug' })
+  ],
+});
 
 export class Logger {
 
@@ -8,7 +18,7 @@ export class Logger {
         if (apiKey) {
             this.logger = new NewrelicLogger(apiKey);
         } else {
-            this.logger = console;
+            this.logger = winstonLogger;
         }
     }
 
