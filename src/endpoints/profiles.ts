@@ -375,7 +375,7 @@ function can_subscribe(user_subscription: string, course_subscription: string): 
 }
 
 const pay_creator = async (creator_email: string, course_subscription: string) => {
-    let amount_to_pay = config.get_subscription_types()[course_subscription]["price"];
+    let amount_to_pay = config.get_subscription_types()[course_subscription]["price"] / 5;
     console.log("AMOUNT TO PAY: ", amount_to_pay);
     console.log("EMAIL: ", creator_email);
     console.log("SUB: ", course_subscription);
@@ -384,7 +384,6 @@ const pay_creator = async (creator_email: string, course_subscription: string) =
         creatorEmail: creator_email,
         courseSubscription: course_subscription,
     });
-
     console.log("PAY CREEATOR RESPONSE: ", response.data);
 }
 
