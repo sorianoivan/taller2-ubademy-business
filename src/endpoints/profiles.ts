@@ -375,6 +375,19 @@ function can_subscribe(user_subscription: string, course_subscription: string): 
     return subscriptions[user_subscription]["price"] >= subscriptions[course_subscription]["price"];
 }
 
+const pay_creator = async (creator_email: string, course_subscription: string) => {
+    let amount_to_pay = config.get_subscription_types()[course_subscription]["price"] / 5;
+    console.log("AMOUNT TO PAY: ", amount_to_pay);
+    console.log("EMAIL: ", creator_email);
+    console.log("SUB: ", course_subscription);
+    let response = await axios.post(PAYMENTS_BACKEND_URL + "/pay_creator", {
+        amountInEthers: amount_to_pay.toString(),
+        creatorEmail: creator_email,
+        courseSubscription: course_subscription,
+    });
+    console.log("PAY CREEATOR RESPONSE: ", response.data);
+}
+
 
 router.post("/subscribe_to_course", async (req: Request, res: Response) => {
     if (subscribe_to_course_schema(req.body)) {
@@ -408,6 +421,9 @@ router.post("/subscribe_to_course", async (req: Request, res: Response) => {
                 }
                 await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$set": {students: existing_course.students}});
                 await profiles_table.updateOne({email: req.body.user_email}, {"$set": {subscribed_courses: user.subscribed_courses}});
+                if (existing_course.subscription_type !== "Free") {
+                    await pay_creator(existing_course.creator_email, existing_course.subscription_type);
+                }
                 res.send(config.get_status_message("subscription_added"));
             } else {
                 res.send(config.get_status_message("wrong_subscription"));
