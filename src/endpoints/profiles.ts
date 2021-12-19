@@ -317,7 +317,7 @@ router.get("/subscription_types_names", (req: Request, res: Response) => {
     });
 });
 
-router.get("/:user_email/:account_type/:profile_email", (req: Request, res: Response) => {
+router.get("/:user_email/:account_type/:profile_email", async (req: Request, res: Response) => {
 if (!get_profile_schema(req.params)) {
     res.send(config.get_status_message("invalid_args"));
 } else {
@@ -325,7 +325,7 @@ if (!get_profile_schema(req.params)) {
     if ((req.params.user_email === req.params.profile_email) || (req.params.account_type === "admin")) {
     has_private_access = true;
     }
-    profiles_table.find({"email": req.params.profile_email}).toArray(function(err: any, result: any) {
+    await profiles_table.find({"email": req.params.profile_email}).toArray(async function(err: any, result: any) {
     if (err) {
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
@@ -344,6 +344,21 @@ if (!get_profile_schema(req.params)) {
             });
         } else {
             document_to_send = document;
+            console.log("DOC: ", document);
+            await axios.get(PAYMENTS_BACKEND_URL + `/wallet/${document.email}`)
+            .then((response:any) => {
+                console.log("RESPONSE: ", response.data);
+                if (response.data["status"] === "error") {
+                    console.log("Error getting wallet info");
+                    document_to_send = {...document_to_send, "wallet_data":{"address":undefined, "balance":undefined}};
+                } else {
+                    document_to_send = {...document_to_send, "wallet_data":{"address":response.data.address, "balance":response.data.balance}};
+                }
+            })
+            .catch((error:any) => {
+                console.log("Error in get wallet data: ", error);
+                document_to_send = {...document_to_send, "wallet_data":{"address":undefined, "balance":undefined}};
+            });
         }
         res.send({
         ...config.get_status_message("data_sent"),
@@ -358,6 +373,19 @@ if (!get_profile_schema(req.params)) {
 function can_subscribe(user_subscription: string, course_subscription: string): boolean {
     let subscriptions: any = config.get_subscription_types();
     return subscriptions[user_subscription]["price"] >= subscriptions[course_subscription]["price"];
+}
+
+const pay_creator = async (creator_email: string, course_subscription: string) => {
+    let amount_to_pay = config.get_subscription_types()[course_subscription]["price"] / 5;
+    console.log("AMOUNT TO PAY: ", amount_to_pay);
+    console.log("EMAIL: ", creator_email);
+    console.log("SUB: ", course_subscription);
+    let response = await axios.post(PAYMENTS_BACKEND_URL + "/pay_creator", {
+        amountInEthers: amount_to_pay.toString(),
+        creatorEmail: creator_email,
+        courseSubscription: course_subscription,
+    });
+    console.log("PAY CREEATOR RESPONSE: ", response.data);
 }
 
 
@@ -393,6 +421,9 @@ router.post("/subscribe_to_course", async (req: Request, res: Response) => {
                 }
                 await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$set": {students: existing_course.students}});
                 await profiles_table.updateOne({email: req.body.user_email}, {"$set": {subscribed_courses: user.subscribed_courses}});
+                if (existing_course.subscription_type !== "Free") {
+                    await pay_creator(existing_course.creator_email, existing_course.subscription_type);
+                }
                 res.send(config.get_status_message("subscription_added"));
             } else {
                 res.send(config.get_status_message("wrong_subscription"));
