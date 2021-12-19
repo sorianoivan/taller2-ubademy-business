@@ -37,7 +37,7 @@ const NOT_CORRECTED_MARK = -1;
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     logger.info("Received POST request at /courses/create with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
     try {
         req.body.collaborators = [];
         req.body.students = [];
@@ -250,7 +250,7 @@ router.put("/update", async (req: Request, res: Response) => {
 
 router.post("/create_exam", async (req: Request, res: Response) => {
     logger.info("Received POST request at /courses/create_exam with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
     if (create_exam_schema(req.body) && (req.body.questions.length !== 0)) {
         try {
             let course_doc = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 
@@ -306,7 +306,7 @@ router.post("/create_exam", async (req: Request, res: Response) => {
 
 router.post("/publish_exam", async (req: Request, res: Response) => {
     logger.info("Received POST request at /courses/publish_exam with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
     if (publish_exam_schema(req.body)) {
         try {
             let proffessors = await courses_table.findOne(
@@ -352,7 +352,7 @@ router.post("/publish_exam", async (req: Request, res: Response) => {
 
 router.post("/edit_exam", async (req: Request, res: Response) => {
     logger.info("Received POST request at /courses/edit_exam with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
     if (create_exam_schema(req.body)) {
         try {
             let proffessors = await courses_table.findOne(
@@ -404,7 +404,7 @@ router.post("/edit_exam", async (req: Request, res: Response) => {
 
 router.post("/complete_exam", async (req: Request, res: Response) => {
     logger.info("Received POST request at /courses/complete_exam with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
     if (complete_exam_schema(req.body)) {
         try {
             let students = await courses_table.findOne(
@@ -551,7 +551,7 @@ async function update_course_status(student_email: string, course_id: string): P
 
 router.post("/grade_exam", async (req: Request, res: Response) => {
     logger.info("Received POST request at /courses/grade_exam with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
     if (grade_exam_schema(req.body)) {
         try {
             let proffessors = await courses_table.findOne(
@@ -860,7 +860,7 @@ router.get("/:id/exam/:email/:exam_name/:projection/:student_email", async (req:
 
 router.post("/add_collaborator", async (req: Request, res: Response) => {
     logger.info("Received POST request at /add_collaborator with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
 
     if (add_collaborator_schema(req.body)) {
         try {
@@ -993,7 +993,7 @@ router.get("/passing_courses/:user_email", async (req: Request, res: Response) =
 
 router.post("/grade_course", async (req: Request, res: Response) => {
     logger.info("Received POST request at /grade_course with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
     if (grade_course_schema(req.body)) {
         try {
             let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)}, 

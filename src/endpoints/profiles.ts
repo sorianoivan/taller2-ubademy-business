@@ -23,7 +23,7 @@ const PAYMENTS_BACKEND_URL = process.env.PAYMENTS_BACKEND_URL;
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
     logger.info("Received POST request at /profiles/create with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
     try {
         //Send request to create wallet to payments backend
         let wallet_created = await axios.post(PAYMENTS_BACKEND_URL + "/wallet", {
@@ -74,7 +74,7 @@ router.post("/create", async (req: Request, res: Response) => {
 router.use(body_parser.json());
 router.post("/update", async (req: Request, res: Response) => {
     logger.info("Received POST request at /profiles/update with body");
-    logger.info(req.params.body);
+    logger.info(req.body);
     try {
         const user_profile = new UserProfile(req.body.name, req.body.profile_picture, req.body.email,
                                             req.body.country, "Free", req.body.interesting_genres, [], [], []); // Free because of the schema
@@ -134,7 +134,7 @@ const update_subscription = async (email: string, new_subscription: string) => {
 router.use(body_parser.json());
 router.post("/upgrade_subscription", async (req: Request, res: Response) => {
     logger.info("Received POST request at /profiles/upgrade_subscription with body");
-    logger.info(req.params.body);
+    logger.info(req.body);
     let response:any = await update_subscription(req.body.email, req.body.new_subscription);
     if (response["status"] === "error") {
         res.status(response["code"]).send(response);
@@ -161,7 +161,7 @@ const modify_subscription = async (user_profile: any, new_subscription: string, 
 router.use(body_parser.json());
 router.post("/modify_subscription", async (req: Request, res: Response) => {
     logger.info("Received POST request at /profiles/modify_subscription with body");
-    logger.info(req.params.body);
+    logger.info(req.body);
     try {
         const user_profile = await profiles_table.findOne({"email": req.body.email});
         if (user_profile == null) {
@@ -202,7 +202,7 @@ router.post("/modify_subscription", async (req: Request, res: Response) => {
 router.use(body_parser.json());
 router.post("/pay_subscription", async (req: Request, res: Response) => {
     logger.info("Received POST request at /profiles/pay_subscription with body");
-    logger.info(req.params.body);
+    logger.info(req.body);
     try {
         const user_profile = await profiles_table.findOne({"email": req.body.email});
         if (user_profile == null) {
@@ -260,7 +260,7 @@ const MONTH_IN_MILLISECONDS = 2592000000;
 router.use(body_parser.json());
 router.post("/validate_subscription", async (req: Request, res: Response) => {
     logger.info("Received POST request at /profiles/validate_subscription with body");
-    logger.info(req.params.body);
+    logger.info(req.body);
     try {
         const user_profile = await profiles_table.findOne({"email": req.body.email});
         if (user_profile == null) {
@@ -464,7 +464,7 @@ const pay_creator = async (creator_email: string, course_subscription: string) =
 
 router.post("/subscribe_to_course", async (req: Request, res: Response) => {
     logger.info("Received POST request at /profiles/subscribe_to_course with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
     if (subscribe_to_course_schema(req.body)) {
         try {
             let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)},
@@ -523,7 +523,7 @@ router.post("/subscribe_to_course", async (req: Request, res: Response) => {
 
 router.post("/unsubscribe_from_course", async (req: Request, res: Response) => {
     logger.info("Received POST request at /profiles/unsubscribe_from_course with body:");
-    logger.info(req.params.body);
+    logger.info(req.body);
     if (subscribe_to_course_schema(req.body)) {
         try {
             let existing_course = await courses_table.findOne({_id: new ObjectId(req.body.course_id)},
