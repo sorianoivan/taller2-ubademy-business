@@ -10,27 +10,27 @@ export class NewrelicLogger {
         this.apiKey = apiKey;
     }
 
-    public info(message: string) {
+    public info(message: any) {
         let infoMessage = "[INFO]: " + message
         this.forwardMessage(infoMessage);
     }
 
-    public debug(message: string) {
+    public debug(message: any) {
         let debugMessage = "[DEBUG]: " + message
         this.forwardMessage(debugMessage);
     }
 
-    public warn(message: string) {
+    public warn(message: any) {
         let warnMessage = "[WARNING]: " + message
         this.forwardMessage(warnMessage);
     }
 
-    public error(message: string) {
+    public error(message: any) {
         let errorMessage = "[ERROR]: " + message
         this.forwardMessage(errorMessage);
     }
 
-    private forwardMessage(message: string) {
+    private forwardMessage(message: any) {
         axios.post(
             API_URL,
             { message: message },
