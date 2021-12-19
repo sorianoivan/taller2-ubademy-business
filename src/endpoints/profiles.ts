@@ -66,10 +66,11 @@ router.use(body_parser.json());
 router.post("/update", async (req: Request, res: Response) => {
     try {
         const user_profile = new UserProfile(req.body.name, req.body.profile_picture, req.body.email, 
-                                            req.body.country, req.body.subscription_type, req.body.interesting_genres, [], [], []);
+                                            req.body.country, "Free", req.body.interesting_genres, [], [], []); // Free because of the schema
         delete user_profile.collaborator_courses; //Hack to prevent collaborator courses reset
         delete user_profile.subscribed_courses; //Hack to prevent subsribed courses reset
         delete user_profile.passed_courses; //Hack to prevent passed courses reset
+        delete user_profile.subscription_type; //Hack to prevent subscription type change without paying
         const query = { "email": req.body.email };
         const update = { "$set": user_profile };
         const options = { "upsert": false };
@@ -217,6 +218,77 @@ router.post("/pay_subscription", async (req: Request, res: Response) => {
     }
 });
 
+const MONTH_IN_MILLISECONDS = 2592000000;
+
+router.use(body_parser.json());
+router.post("/validate_subscription", async (req: Request, res: Response) => {
+    try {
+        const user_profile = await profiles_table.findOne({"email": req.body.email});
+        if (user_profile == null) {
+            res.send(config.get_status_message("non_existent_user"));//Ver si tiene sentido mandar este error xq en teoria aca
+                                                                     //llega cuando el user ya esta logueado, deberia existir
+            return;
+        }
+        console.log("USUARIO: ", user_profile);//To debug
+
+        //Ver si hace falta el await
+        await axios.get(PAYMENTS_BACKEND_URL + `/last_deposit/${req.body.email}`)
+        .then((response:any) => {
+            console.log("RESPONSE: ", response.data);
+            if (response.data["status"] === "error") {
+                if (response.data["message"] === "User does not have deposits") {
+                    res.send({"status":"ok", "message":"User does not have deposits"});
+                } else {
+                    res.send({"status":"error", "message":"Could not get last deposit"});
+                }
+                return;
+            }
+            let last_deposit = new Date(response.data.last_deposit_date)
+            console.log("LAST DEPOSIT: ", last_deposit);
+            let date = new Date();
+            date.setHours(date.getHours()-3);//Para que sea la hora de argentina
+            console.log("DATE: ", date);
+            let time_passed = date.getTime() - last_deposit.getTime();//In milliseconds
+            console.log("TIME PASSED: ", time_passed);
+            if (time_passed >= MONTH_IN_MILLISECONDS) {//One month in ms.
+                if (user_profile.subscription_type !== "Free") {
+                    let amount_to_pay = config.general_data["subscriptions"][user_profile.subscription_type]["price"];
+                    console.log("Trying to pay: ", amount_to_pay);
+                    axios.post(PAYMENTS_BACKEND_URL + "/deposit", {
+                        email: user_profile.email,
+                        amountInEthers: amount_to_pay.toString(),
+                        newSubscription: user_profile.subscription_type
+                    })
+                    .then((response:any) => {
+                        console.log("DEPOSIT RESPONSE: ", response.data);
+                        if (response.data["status"] === "ok") {
+                            res.send({"status":"ok", "message":"transaction is beign processed"})//Si falla le va a poner la sub en free
+                        } else {
+                            update_subscription(user_profile.email, "Free");
+                            res.send({"status":"error", "message":"Could not pay. Changing suscription to Free"})
+                        }
+                    })
+                    .catch((error:any) => {
+                        console.log("Error in deposit request: ", error);
+                        update_subscription(user_profile.email, "Free");
+                        res.send({"status":"error", "message":"Could not pay. Changing suscription to Free"})
+                    });
+                } else {
+                    res.send({"status":"ok", "message":"Free subscription doesnt need payments"});
+                }
+            } else {
+                res.send({"status":"ok", "message":"Subscription is still valid"});
+            }
+        })
+        .catch((error:any) => {
+            console.log(error);
+            res.send( {"status":"error", "message":error});
+        });
+    } catch (e) {
+        res.send({"status":"error", "message":"Unexpected error"}); 
+    }
+});
+
 router.get("/countries", (req: Request, res: Response) => {
     res.send({
         ...config.get_status_message("data_sent"), 
@@ -245,7 +317,7 @@ router.get("/subscription_types_names", (req: Request, res: Response) => {
     });
 });
 
-router.get("/:user_email/:account_type/:profile_email", (req: Request, res: Response) => {
+router.get("/:user_email/:account_type/:profile_email", async (req: Request, res: Response) => {
 if (!get_profile_schema(req.params)) {
     res.send(config.get_status_message("invalid_args"));
 } else {
@@ -253,7 +325,7 @@ if (!get_profile_schema(req.params)) {
     if ((req.params.user_email === req.params.profile_email) || (req.params.account_type === "admin")) {
     has_private_access = true;
     }
-    profiles_table.find({"email": req.params.profile_email}).toArray(function(err: any, result: any) {
+    await profiles_table.find({"email": req.params.profile_email}).toArray(async function(err: any, result: any) {
     if (err) {
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
@@ -272,6 +344,21 @@ if (!get_profile_schema(req.params)) {
             });
         } else {
             document_to_send = document;
+            console.log("DOC: ", document);
+            await axios.get(PAYMENTS_BACKEND_URL + `/wallet/${document.email}`)
+            .then((response:any) => {
+                console.log("RESPONSE: ", response.data);
+                if (response.data["status"] === "error") {
+                    console.log("Error getting wallet info");
+                    document_to_send = {...document_to_send, "wallet_data":{"address":undefined, "balance":undefined}};
+                } else {
+                    document_to_send = {...document_to_send, "wallet_data":{"address":response.data.address, "balance":response.data.balance}};
+                }
+            })
+            .catch((error:any) => {
+                console.log("Error in get wallet data: ", error);
+                document_to_send = {...document_to_send, "wallet_data":{"address":undefined, "balance":undefined}};
+            });
         }
         res.send({
         ...config.get_status_message("data_sent"),
@@ -286,6 +373,19 @@ if (!get_profile_schema(req.params)) {
 function can_subscribe(user_subscription: string, course_subscription: string): boolean {
     let subscriptions: any = config.get_subscription_types();
     return subscriptions[user_subscription]["price"] >= subscriptions[course_subscription]["price"];
+}
+
+const pay_creator = async (creator_email: string, course_subscription: string) => {
+    let amount_to_pay = config.get_subscription_types()[course_subscription]["price"] / 5;
+    console.log("AMOUNT TO PAY: ", amount_to_pay);
+    console.log("EMAIL: ", creator_email);
+    console.log("SUB: ", course_subscription);
+    let response = await axios.post(PAYMENTS_BACKEND_URL + "/pay_creator", {
+        amountInEthers: amount_to_pay.toString(),
+        creatorEmail: creator_email,
+        courseSubscription: course_subscription,
+    });
+    console.log("PAY CREEATOR RESPONSE: ", response.data);
 }
 
 
@@ -321,6 +421,9 @@ router.post("/subscribe_to_course", async (req: Request, res: Response) => {
                 }
                 await courses_table.updateOne({_id: new ObjectId(req.body.course_id)}, {"$set": {students: existing_course.students}});
                 await profiles_table.updateOne({email: req.body.user_email}, {"$set": {subscribed_courses: user.subscribed_courses}});
+                if (existing_course.subscription_type !== "Free") {
+                    await pay_creator(existing_course.creator_email, existing_course.subscription_type);
+                }
                 res.send(config.get_status_message("subscription_added"));
             } else {
                 res.send(config.get_status_message("wrong_subscription"));

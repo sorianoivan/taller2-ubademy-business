@@ -14,7 +14,10 @@ import request from "supertest";
 let courses = require("./endpoints/courses");
 let profiles = require("./endpoints/profiles");
 
+import { Logger } from "./utils/logger"
 
+const NEWRELIC_API_KEY = process.env.NEWRELIC_API_KEY;
+let logger = new Logger(NEWRELIC_API_KEY);
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
 // The string is from the test db
 export const url = process.env.MONGODB_URL || "mongodb://mongodb_business:27017";
@@ -27,9 +30,13 @@ export function connect_to_database() {
   const mongo_client = new mongo.MongoClient(url);
   try {
     mongo_client.connect().then({});
-    console.log("Connected correctly to server");
+    logger.info("Connected correctly to the MongoDB client");
   } catch (err) {
-    console.log(err);
+    let errorMessage: string = "Error connecting to the MongoDB client.";
+    if (err instanceof Error) {
+        errorMessage += " " + err.name + ": " + err.message;
+    }
+    logger.error(errorMessage);
     process.exit(1);
   }
   return mongo_client
@@ -39,6 +46,7 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   const app: Application = express();
 
   app.get("/", (req: Request, res: Response) => {
+    logger.info("Received GET request at /");
     res.send("Hello world!");
   });
 
