@@ -62,7 +62,8 @@ router.post("/create", async (req: Request, res: Response) => {
         res.send({...config.get_status_message("course_created"), "id": course_id});
     } catch (err) {
         let e = <Error>err;
-        logger.debug("Error creating course: ", e);
+        logger.debug("Error creating course: ");
+        logger.debug(e);
         if (e.name === "MongoServerError") {
             logger.info("Error creating course: course with same name already exists");
             res.send(config.get_status_message("duplicate_course"));
@@ -224,8 +225,10 @@ router.put("/update", async (req: Request, res: Response) => {
         const update = { "$set": new_course };
         const options = { "upsert": false };
         let { matchedCount, modifiedCount } = await courses_table.updateOne(course_to_update, update, options);
-        logger.debug("matched: ", matchedCount);
-        logger.debug("modified: ", modifiedCount);
+        logger.debug("matched: ");
+        logger.debug(matchedCount);
+        logger.debug("modified: ");
+        logger.debug(modifiedCount);
         res.send(config.get_status_message("course_updated"));
     } catch(err) {
         let error = <Error>err;

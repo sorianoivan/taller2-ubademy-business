@@ -64,7 +64,6 @@ router.post("/create", async (req: Request, res: Response) => {
             res.status(message["code"]).send(message);
         } else {
             logger.error("Error creating profile: unexpected Error");
-            logger.error(e.name);
             logger.error(e);
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
@@ -102,7 +101,6 @@ router.post("/update", async (req: Request, res: Response) => {
             res.send(config.get_status_message("invalid_body"));
         } else {
             logger.error("Error updating profile: unexpected Error");
-            logger.error(e.name);
             logger.error(e);
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
@@ -128,7 +126,6 @@ const update_subscription = async (email: string, new_subscription: string) => {
     } catch (e) {
         logger.error("Error updating subscription: unexpected Error");
         logger.error(e);
-        logger.error(e.name);
         let message = config.get_status_message("unexpected_error");
         return message;
     }
@@ -192,7 +189,6 @@ router.post("/modify_subscription", async (req: Request, res: Response) => {
         res.send(response);
     } catch (e) {
         logger.error("Error modifying subscription: unexpected Error");
-        logger.error(e.name);
         logger.error(e);
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
@@ -253,7 +249,6 @@ router.post("/pay_subscription", async (req: Request, res: Response) => {
         });
     } catch (e) {
         logger.error("Error paying subscription: unexpected Error");
-        logger.error(e.name);
         logger.error(e);
         let message = config.get_status_message("unexpected_error");
         res.status(message["code"]).send(message);
@@ -305,7 +300,7 @@ router.post("/validate_subscription", async (req: Request, res: Response) => {
 
             let time_passed = date.getTime() - last_deposit.getTime();//In milliseconds
 
-            logger.debug("TIME PASSED: "");
+            logger.debug("TIME PASSED: ");
             logger.debug(time_passed);
 
             if (time_passed >= MONTH_IN_MILLISECONDS) {//One month in ms.
@@ -349,7 +344,6 @@ router.post("/validate_subscription", async (req: Request, res: Response) => {
         });
     } catch (e) {
         logger.error("Error validating subscription: unexpected Error");
-        logger.error(e.name);
         logger.error(e);
         res.send({"status":"error", "message":"Unexpected error"});
     }
@@ -515,7 +509,6 @@ router.post("/subscribe_to_course", async (req: Request, res: Response) => {
             }
         } catch (err) {
             logger.error("Error subscribing to course: unexpected Error");
-            logger.error(err.name);
             logger.error(err);
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
@@ -565,7 +558,6 @@ router.post("/unsubscribe_from_course", async (req: Request, res: Response) => {
 
         } catch (err) {
             logger.error("Error unsubscribing from course: unexpected Error");
-            logger.error(err.name);
             logger.error(err);
             let message = config.get_status_message("unexpected_error");
             res.status(message["code"]).send(message);
