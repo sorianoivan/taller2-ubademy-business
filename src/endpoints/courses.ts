@@ -817,13 +817,14 @@ router.get("/:id/students/:user_email/:exam_name", async (req: Request, res: Res
         let existing_course = await courses_table.findOne({_id: new ObjectId(req.params.id)}, 
                 {projection: { "_id": 1, 
                 "students": 1,
+                "collaborators": 1,
                 "creator_email": 1,
              }});
         if (existing_course === null) {
             res.send(config.get_status_message("non_existent_course"));
             return;
         }
-        if (existing_course.creator_email === req.params.user_email) {
+        if ((existing_course.creator_email === req.params.user_email) || (existing_course.collaborators.includes(req.params.user_email))) {
 
             if (req.params.exam_name === "none") {
                 res.send({...config.get_status_message("got_students_names"), "names": existing_course.students});
