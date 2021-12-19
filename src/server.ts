@@ -13,11 +13,8 @@ import { get_profile_schema } from "./lone_schemas/get_profile"
 import request from "supertest";
 let courses = require("./endpoints/courses");
 let profiles = require("./endpoints/profiles");
+import { logger } from "./utils/logger";
 
-import { Logger } from "./utils/logger"
-
-const NEWRELIC_API_KEY = process.env.NEWRELIC_API_KEY;
-let logger = new Logger(NEWRELIC_API_KEY);
 //TODO: The link is here because when the tests are run there is no env to take MONGODB_URL from.
 // The string is from the test db
 const url = process.env.MONGODB_URL;
