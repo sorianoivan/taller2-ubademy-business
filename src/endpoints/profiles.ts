@@ -11,7 +11,7 @@ const body_parser = require('body-parser');
 const mongo = require("mongodb")
 import { get_profile_schema } from "../lone_schemas/get_profile"
 import { subscribe_to_course_schema } from "../lone_schemas/subscribe_to_course"
-import { profiles_table, courses_table } from "../index"
+import { profiles_table, courses_table } from "../db/database"
 const axios = require("axios");
 let router = express.Router();
 import { logger } from "../utils/logger";

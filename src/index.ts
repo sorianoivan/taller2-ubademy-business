@@ -1,5 +1,6 @@
 require('newrelic')
-import { create_server, connect_to_database } from "./server";
+import { create_server } from "./server";
+import { business_db, mongo_client } from "./db/database";
 import * as mongo from "mongodb";
 import { logger } from "./utils/logger";
 
@@ -39,16 +40,6 @@ const start_server = (business_db: mongo.Db) => {
   });
 };
 
-let mongo_client = connect_to_database();
-
-export const business_db = mongo_client.db(<string>"Business");
-export const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
-export const courses_table = business_db.collection(process.env.COURSES_TABLE || "Courses");
-export const exams_table = business_db.collection(process.env.EXAMS_TABLE || "Exams");
-
-// courses_table.deleteMany({});
-// profiles_table.deleteMany({});
-// exams_table.deleteMany({});
 
 let server = start_server(business_db);
 
