@@ -18,7 +18,7 @@ export function connect_to_database(mongoUrl: string) {
   }
 }
 
-const url = process.env.MONGODB_URL || "mongodb://mongodb_business:27017";
+let url = process.env.MONGODB_URL || "mongodb://mongodb_business:27017";
 if (process.env.ENV === 'test') {
     url = process.env.MONGODB_TEST_URL || "mongodb+srv://ubademy:business@cluster0.w31lx.mongodb.net/Business?retryWrites=true&w=majority";
 }
