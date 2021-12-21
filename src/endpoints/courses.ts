@@ -16,7 +16,7 @@ import { complete_exam_schema } from "../lone_schemas/complete_exam"
 import { grade_exam_schema } from "../lone_schemas/grade_exam"
 import { add_collaborator_schema } from "../lone_schemas/add_collaborator"
 import { grade_course_schema } from "../lone_schemas/grade_course"
-import { business_db, courses_table, exams_table, profiles_table } from "../index"
+import { business_db, courses_table, exams_table, profiles_table } from "../db/database"
 import { Exam } from "../models/exam"
 import { CompletedExam } from "../models/completed_exam";
 import { CourseGrading } from "../models/course_grading";
