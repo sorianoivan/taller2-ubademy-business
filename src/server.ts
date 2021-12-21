@@ -12,11 +12,7 @@ import { get_profile_schema } from "./lone_schemas/get_profile"
 import request from "supertest";
 let courses = require("./endpoints/courses");
 let profiles = require("./endpoints/profiles");
-
-import { Logger } from "./utils/logger"
-
-const NEWRELIC_API_KEY = process.env.NEWRELIC_API_KEY;
-let logger = new Logger(NEWRELIC_API_KEY);
+import { logger } from "./utils/logger";
 
 export function create_server(business_db: Db) {//Db is the type for a mongo database
   const app: Application = express();
