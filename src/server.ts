@@ -21,10 +21,12 @@ export function create_server(business_db: Db) {//Db is the type for a mongo dat
   const app: Application = express();
 
   app.use((req: Request, res: Response, next) => {
-    let auth_key = req.get('Authorization');
-    if(!auth_key || auth_key !== API_KEY) {
-        res.send(config.get_status_message("unauthorized_api_key"));
-        return;
+    if (!config.api_key_whitelist.includes(req.url)) {
+        let auth_key = req.get('Authorization');
+        if(!auth_key || auth_key !== API_KEY) {
+            res.send(config.get_status_message("unauthorized_api_key"));
+            return;
+        }
     }
     next();
   });

@@ -8,6 +8,7 @@ class Config {
     available_countries: string[];
     general_data: any;
     status_messages: any;
+    api_key_whitelist: string[];
     
     constructor() {
         var countries_text = fs.readFileSync(path.join(__dirname, "../config_files/countries.txt"), "utf-8");
@@ -26,6 +27,10 @@ class Config {
 
         json_text = fs.readFileSync(path.join(__dirname, "../config_files/status_messages.json"), "utf-8");
         this.status_messages = JSON.parse(json_text);
+
+        this.api_key_whitelist = [
+            "/api-docs"
+        ]
     }
 
     get_available_countries(): string[] {
