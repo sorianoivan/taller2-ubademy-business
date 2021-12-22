@@ -3,3 +3,5 @@ newrelic_agent.log
 .idea
 mongodb
 compose_mongodb
+.nyc_output/
+logs.log
