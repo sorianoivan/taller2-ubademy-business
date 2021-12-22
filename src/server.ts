@@ -14,6 +14,9 @@ let courses = require("./endpoints/courses");
 let profiles = require("./endpoints/profiles");
 import { logger } from "./utils/logger";
 
+
+const API_KEY = process.env.API_KEY || "faf5b8b0651b9baf0919f77f5b50f9b872b3521f922c14c0ad12f696b50c1b73"
+
 export function create_server(business_db: Db) {//Db is the type for a mongo database
   const app: Application = express();
 
