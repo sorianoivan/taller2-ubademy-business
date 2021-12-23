@@ -29,7 +29,7 @@ class Config {
         this.status_messages = JSON.parse(json_text);
 
         this.api_key_whitelist = [
-            "/api-docs"
+            "/swagger"
         ]
     }
 
