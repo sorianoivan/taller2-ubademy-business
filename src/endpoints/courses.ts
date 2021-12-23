@@ -184,12 +184,6 @@ router.get("/organized/:course_filter/:subscription_filter/:is_admin", async (re
         filter.subscription_type = req.params.subscription_filter;
     }
 
-    // if ((Object.keys(filter).length !== 0) || (req.params.is_admin === "true")) {
-    //     send_filtered_courses(res, filter, projection);
-    // } else {
-    //     logger.info("Error getting organized courses: no filter");
-    //     res.send(config.get_status_message("no_filter"));
-    // }
     send_filtered_courses(res, filter, projection);
 });
 
