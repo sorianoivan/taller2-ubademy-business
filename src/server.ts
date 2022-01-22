@@ -14,20 +14,35 @@ let courses = require("./endpoints/courses");
 let profiles = require("./endpoints/profiles");
 import { logger } from "./utils/logger";
 
+
+const API_KEY = process.env.API_KEY || "faf5b8b0651b9baf0919f77f5b50f9b872b3521f922c14c0ad12f696b50c1b73"
+
 export function create_server(business_db: Db) {//Db is the type for a mongo database
   const app: Application = express();
 
+  app.use((req: Request, res: Response, next) => {
+    if (!config.api_key_whitelist.includes(req.url)) {
+        let auth_key = req.get('Authorization');
+        if(!auth_key || auth_key !== API_KEY) {
+            res.send(config.get_status_message("unauthorized_api_key"));
+            return;
+        }
+    }
+    next();
+  });
+
   app.get("/", (req: Request, res: Response) => {
+    res.send({"status": "ok", "message": "Hello world!"});
     logger.info("Received GET request at /");
-    res.send("Hello world!");
+    res.send({"status": "ok", "message": "Hello world!"});
   });
 
   app.get("/ping", (req: Request, res: Response) => {
-    res.send("pong");
+    res.send({"status": "ok", "message": "pong"});
   });
 
   app.get("/status", (req: Request, res: Response) => {
-    res.send("ok");
+    res.send({"status": "ok"});
   });
 
   app.use("/courses", courses);

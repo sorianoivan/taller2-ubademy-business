@@ -19,6 +19,7 @@ import { logger } from "../utils/logger";
 // const profiles_table = business_db.collection(process.env.PROFILES_TABLE || "Profiles");
 
 const PAYMENTS_BACKEND_URL = process.env.PAYMENTS_BACKEND_URL;
+const PAYMENTS_API_KEY = "03aaeb781af46e2f06a9784c2a8e4b26a3fd89f96ad08e2988917ba76f7d9933"
 
 router.use(body_parser.json());
 router.post("/create", async (req: Request, res: Response) => {
@@ -26,9 +27,11 @@ router.post("/create", async (req: Request, res: Response) => {
     logger.info(req.body);
     try {
         //Send request to create wallet to payments backend
-        let wallet_created = await axios.post(PAYMENTS_BACKEND_URL + "/wallet", {
-            email: req.body.email,
-        })
+        let wallet_created = axios.post(PAYMENTS_BACKEND_URL + "/wallet", {
+            email: req.body.email
+        },
+        { headers: { common: { authorization: PAYMENTS_API_KEY } } }
+        )
         .then((response:any) => {
             logger.debug(response.data);
             logger.debug(response.status);
@@ -231,7 +234,9 @@ router.post("/pay_subscription", async (req: Request, res: Response) => {
             email: user_profile.email,
             amountInEthers: amount_to_pay.toString(),
             newSubscription: req.body.new_subscription
-        })
+        },
+        { headers: { common: { authorization: PAYMENTS_API_KEY } } }
+        )
         .then((response:any) => {//ver si lo cambio al schema de la response de axios en vez de any
             logger.debug(response.data);
             logger.debug(response.status);

@@ -48,12 +48,13 @@
 "subscription_added": {"status": "ok", "message": "subscription added"},
 "subscription_deleted": {"status": "ok", "message": "subscription deleted"},
 "got_students_names": {"status": "ok", "message": "got students names"},
+"exam_already_graded": {"status": "error", "message": "exam already graded"},
+"unauthorized_api_key": {"status": "error", "message": "unauthorized api key"},
 "passed_courses": {"status": "ok", "message": "got passed courses"},
 "questions_have_no_students": {"status": "error", "message": "questions have no student assigned"},
 "not_from_course": {"status": "error", "message": "user not from course"},
 "not_your_exam": {"status": "error", "message": "not your exam"},
 "got_courses": {"status": "ok", "message": "got own courses"},
 "user_already_commented": {"status": "error", "message": "past comment exists"},
-"comment_inserted": {"status": "ok", "message": "comment inserted successfully"},
-"exam_already_graded": {"status": "error", "message": "exam already graded"}
+"comment_inserted": {"status": "ok", "message": "comment inserted successfully"}
 }

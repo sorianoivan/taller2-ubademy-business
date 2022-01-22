@@ -29,6 +29,7 @@ COPY test /app/test
 EXPOSE 8002
 
 ENV PORT=8002
+ENV API_KEY="faf5b8b0651b9baf0919f77f5b50f9b872b3521f922c14c0ad12f696b50c1b73"
 ENV MONGODB_URL="mongodb+srv://ubademy-business:juNU5lALrtGcd9TH@ubademy.t7kej.mongodb.net/Ubademy?retryWrites=true&w=majority"
 ENV BUSINESS_DATABASE="Business"
 ENV PROFILES_TABLE="Profiles"
